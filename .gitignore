@@ -1,0 +1,10 @@
+upload/*
+.vscode
+.idea
+.env*
+!.env.example
+node_modules
+dist
+*.tgz
+*.log
+scripts/seed_*.ts
