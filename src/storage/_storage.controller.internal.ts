@@ -1,10 +1,10 @@
 import { StorageService } from "./storage.service";
-import * as errors from "../errors";
 import { downloadFileFromS3 } from "@/storage/get-file-storage-manager";
 import { AwsS3FileConfig } from "@/providers/file/file-provider/aws-s3-file.config";
 import path from "path";
 import os from "os";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export class StorageControllerInternal {
   constructor(
@@ -51,7 +51,7 @@ export class StorageControllerInternal {
       id,
     });
     if (!persistedFile) {
-      throw new errors.NotFoundException('file not found');
+      throw new NotFoundError('file not found');
     }
 
     return reply.send(persistedFile);
@@ -66,7 +66,7 @@ export class StorageControllerInternal {
     });
 
     if (!persistedFile) {
-      throw new errors.NotFoundException('file not found');
+      throw new NotFoundError('file not found');
     }
     const root = path.parse(os.homedir()).root;
 

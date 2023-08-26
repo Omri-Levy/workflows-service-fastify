@@ -1,4 +1,5 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { Observable } from 'rxjs';
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
@@ -21,7 +22,7 @@ export class SessionAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
 
     if (!req.isAuthenticated()) {
-      throw new UnauthorizedException('Unauthorized');
+      throw new UnauthorizedError('Unauthorized');
     }
 
     return true;

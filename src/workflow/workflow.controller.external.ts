@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { isRecordNotFoundError } from "@/db/db.util";
-import * as common from "@nestjs/common";
-import { NotFoundException } from "@nestjs/common";
-import * as errors from "../errors";
+import { NotFoundError } from "@/common/errors/not-found-error";
 import { ResubmissionReason, TResubmissionReason, WorkflowService } from "./workflow.service";
 import { EndUserRepository } from "@/end-user/end-user.repository";
 import { db } from "@/db/client";
@@ -22,6 +20,9 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
 import { SortOrderSchema } from "@/common/query-filters/sort-order";
+import { TypeNoNull, TypeNullable } from "@/common/validation";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import { BadRequestError } from "@/common/errors/bad-request-error";
 
 export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
@@ -85,20 +86,12 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
                       "context"
                     ]),
                   Type.Object({
-                    workflowDefinitionName: Type.Union(
-                      [
-                        WorkflowRuntimeDataSchema.properties.workflowDefinition.properties.name,
-                        Type.Null()
-                      ]
-                    ),
-                    assignee: Type.Union(
-                      [
-                        Type.Pick(
-                          WorkflowRuntimeDataSchema.properties.assignee,
-                          ["id", "firstName", "lastName"]
-                        ),
-                        Type.Null()
-                      ]
+                    workflowDefinitionName: TypeNullable(Type.String()),
+                    assignee: TypeNullable(
+                      Type.Pick(
+                        WorkflowRuntimeDataSchema.properties.assignee,
+                        ["id", "firstName", "lastName"]
+                      )
                     )
                   })
                 ]
@@ -110,7 +103,7 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
             })
           }),
           400: Type.Object({
-            status: Type.Optional(Type.String()),
+            status: Type.String(),
             message: Type.String()
           }),
           401: Type.Object({
@@ -139,8 +132,7 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
   );
 
   // getWorkflowDefinitionById
-  fastify.get("/workflow-definition/:id",
-    {
+  fastify.get("/workflow-definition/:id", {
       schema: {
         description: "Retrieve a workflow definition by its unique ID",
         tags: ["External", "Workflow"],
@@ -149,6 +141,10 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
         }),
         response: {
           200: Type.Omit(WorkflowDefinitionSchema, ["workflowRuntimeData"]),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -166,14 +162,26 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       }
     },
     async (req, reply) => {
-      const workflowDefinition = await workflowService.getWorkflowDefinitionById(req.params.id);
+      try {
+        const workflowDefinition = await workflowService.getWorkflowDefinitionById(req.params.id);
 
-      return reply.send(workflowDefinition);
+        return reply.send(workflowDefinition);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.params.id)}`
+            });
+        }
+
+        throw err;
+      }
     });
 
   // getRunnableWorkflowById
-  fastify.get("/:id",
-    {
+  fastify.get("/:id", {
       schema: {
         description: "Retrieve an end-user by its unique ID",
         tags: ["External", "Workflow"],
@@ -185,6 +193,10 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
             workflowDefinition: Type.Omit(WorkflowDefinitionSchema, ["workflowRuntimeData"]),
             workflowRuntimeData: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"])
           }),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -202,66 +214,90 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       }
     },
     async (req, reply) => {
-      const workflowRuntimeData = await workflowService.getWorkflowRuntimeDataById(req.params.id);
+      try {
+        const workflowRuntimeData = await workflowService.getWorkflowRuntimeDataById(req.params.id);
+        const workflowDefinition = await workflowService.getWorkflowDefinitionById(
+          workflowRuntimeData.workflowDefinitionId
+        );
 
-      if (!workflowRuntimeData) {
-        throw new NotFoundException(`No resource with id [${req.params.id}] was found`);
+        return reply.send({
+          workflowDefinition,
+          workflowRuntimeData
+        });
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.params.id)}`
+            });
+        }
+
+        throw err;
       }
-
-      const workflowDefinition = await workflowService.getWorkflowDefinitionById(
-        workflowRuntimeData.workflowDefinitionId
-      );
-
-      return reply.send({
-        workflowDefinition,
-        workflowRuntimeData
-      });
     });
 
   // updateById
   fastify.patch("/:id", {
-    schema: {
-      description: "Update a workflow runtime data by its unique ID",
-      tags: ["External", "Workflow"],
-      params: Type.Object({
-        id: Type.String({ description: "ID of the workflow runtime data" })
-      }),
-      body: Type.Object({
-        status: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.status),
-        state: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.state),
-        context: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.context),
-        assigneeId: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.assigneeId),
-        resolvedAt: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.resolvedAt)
-      }),
-      response: {
-        200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
-        404: Type.Object({
-          status: Type.String(),
-          message: Type.String()
+      schema: {
+        description: "Update a workflow runtime data by its unique ID",
+        tags: ["External", "Workflow"],
+        params: Type.Object({
+          id: Type.String({ description: "ID of the workflow runtime data" })
         }),
-        401: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        500: Type.Object({
-          status: Type.Optional(Type.String()),
-          code: Type.Optional(Type.Number()),
-          message: Type.String()
-        })
+        body:
+          Type.Partial(
+            Type.Object({
+              status: WorkflowRuntimeDataSchema.properties.status,
+              context: WorkflowRuntimeDataSchema.properties.context,
+              resolvedAt: WorkflowRuntimeDataSchema.properties.resolvedAt,
+              state: TypeNoNull(WorkflowRuntimeDataSchema.properties.state),
+              assigneeId: TypeNoNull(WorkflowRuntimeDataSchema.properties.assigneeId)
+            }),
+            {
+              additionalProperties: false
+            }
+          ),
+        response: {
+          200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
+          404: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          401: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
+          })
+        }
       }
-    }
-  }, async (req, reply) => {
-    try {
-      const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(req.params.id, req.body);
+    },
+    async (req, reply) => {
+      try {
+        console.log("req.body", req.body);
+        const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(req.params.id, req.body);
 
-      return reply.send(workflowRuntimeData);
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        return reply.send(workflowRuntimeData);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply.status(StatusCodes.NOT_FOUND).send({
+            status: getReasonPhrase(StatusCodes.NOT_FOUND),
+            message: `No resource was found for ${JSON.stringify(req.params.id)}`
+          });
+        }
+
+        throw err;
       }
-      throw error;
-    }
-  });
+    });
 
   // intent
   fastify.post("/intent", {
@@ -271,6 +307,8 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
         body: Type.Object({
           entityId: Type.String({ description: "ID of the business or individual" }),
           intentName: Type.String({ description: "Name of the intent" })
+        }, {
+          additionalProperties: false
         }),
         response: {
           200: Type.Tuple([
@@ -283,6 +321,10 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
               })
             ]
           ),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -300,11 +342,24 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       }
     }
     , async (req, reply) => {
-      // Rename to `intent` or `getRunnableWorkflowDataByIntent`?
-      const entityType = req.body.intentName === "kycSignup" ? "endUser" : "business";
-      const workflowRuntimeData = await workflowService.resolveIntent(req.body.intentName, req.body.entityId, entityType);
+      try {
+        // Rename to `intent` or `getRunnableWorkflowDataByIntent`?
+        const entityType = req.body.intentName === "kycSignup" ? "endUser" : "business";
+        const workflowRuntimeData = await workflowService.resolveIntent(req.body.intentName, req.body.entityId, entityType);
 
-      return reply.send(workflowRuntimeData);
+        return reply.status(201).send(workflowRuntimeData);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.body)}`
+            });
+        }
+
+        throw err;
+      }
     });
 
   // createWorkflowRuntimeData
@@ -312,10 +367,13 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       schema: {
         description: "Creates or updates an entity and a workflow runtime data",
         tags: ["External", "Workflows"],
-        body: Type.Object({
-          workflowId: Type.String({ description: "ID of the workflow" }),
-          context: WorkflowRuntimeDataSchema.properties.context,
-          config: WorkflowRuntimeDataSchema.properties.config
+        body: Type.Composite([
+          Type.Object({
+            workflowId: Type.String({ description: "ID of the workflow" })
+          }),
+          Type.Pick(WorkflowRuntimeDataSchema, ["context", "config"])
+        ], {
+          additionalProperties: false
         }),
         response: {
           200: Type.Object({
@@ -324,6 +382,10 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
             ballerineEntityId: Type.String({
               description: "ID of the business or individual"
             })
+          }),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
           }),
           404: Type.Object({
             status: Type.String(),
@@ -340,12 +402,13 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
           })
         }
       }
-}, async (req, reply) => {
+    },
+    async (req, reply) => {
       const { workflowId, context, config } = req.body;
       const { entity } = context;
 
-      if (!entity.id && !entity.ballerineEntityId)
-        throw new common.BadRequestException("Entity id is required");
+      if (!entity?.id && !entity?.ballerineEntityId)
+        throw new BadRequestError("Entity id is required");
 
       const actionResult = await workflowService.createOrUpdateWorkflowRuntime({
         workflowDefinitionId: workflowId,
@@ -360,7 +423,7 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       });
     });
 
-// event
+  // event
   fastify.post("/:id/event", {
       schema: {
         description: "Send an event to the workflow with a payload",
@@ -389,12 +452,18 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
               })
             )
           )
+        }, {
+          additionalProperties: false
         }),
         response: {
           200: {
             type: "null",
             description: "Event sent successfully"
           },
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -412,12 +481,29 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       }
     }
     , async (req, reply) => {
-      await workflowService.event({
-        ...req.body,
-        id: req.params.id
-      });
+      try {
+        const { name, document, resubmissionReason } = req.body;
 
-      return reply.send();
+        await workflowService.event({
+          id: req.params.id,
+          name,
+          document,
+          resubmissionReason
+        });
+
+        return reply.send();
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.params.id)}`
+            });
+        }
+
+        throw err;
+      }
     });
 
   // sendEvent
@@ -449,12 +535,18 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
               })
             )
           )
+        }, {
+          additionalProperties: false
         }),
         response: {
           200: {
             type: "null",
             description: "Event sent successfully"
           },
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -470,14 +562,31 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
           })
         }
       }
-    }
-    , async (req, reply) => {
-      await workflowService.event({
-        ...req.body,
-        id: req.params.id
-      });
+    },
+    async (req, reply) => {
+      try {
+        const { name, document, resubmissionReason } = req.body;
 
-      return reply.send();
+        await workflowService.event({
+          id: req.params.id,
+          name,
+          document,
+          resubmissionReason
+        });
+
+        return reply.send();
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.params.id)}`
+            });
+        }
+
+        throw err;
+      }
     });
 
   // getWorkflowRuntimeDataContext
@@ -489,8 +598,10 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
           id: Type.String({ description: "ID of the workflow" })
         }),
         response: {
-          200: Type.Object({
-            context: WorkflowRuntimeDataSchema.properties.context
+          200: Type.Pick(WorkflowRuntimeDataSchema, ["context"]),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
           }),
           404: Type.Object({
             status: Type.String(),
@@ -515,7 +626,7 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
         return reply.send({ context });
       } catch (err) {
         if (isRecordNotFoundError(err)) {
-          throw new NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
         }
 
         throw err;

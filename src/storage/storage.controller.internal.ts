@@ -1,7 +1,6 @@
 import { db } from "@/db/client";
 import { FileRepository } from "@/storage/storage.repository";
 import { StorageService } from "@/storage/storage.service";
-import * as errors from "@/errors";
 import { Type } from "@sinclair/typebox";
 import path from "path";
 import os from "os";
@@ -11,6 +10,7 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import multer from "fastify-multer";
 import { fileFilter } from "@/storage/file-filter";
 import { createReadStream } from "fs";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export const storageControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
   const fileRepository = new FileRepository(
@@ -53,7 +53,7 @@ export const storageControllerInternal: FastifyPluginAsyncTypebox = async (fasti
       id
     });
     if (!persistedFile) {
-      throw new errors.NotFoundException("file not found");
+      throw new NotFoundError("file not found");
     }
 
     return reply.send(persistedFile);
@@ -75,7 +75,7 @@ export const storageControllerInternal: FastifyPluginAsyncTypebox = async (fasti
     let filePath;
 
     if (!persistedFile) {
-      throw new errors.NotFoundException("file not found");
+      throw new NotFoundError("file not found");
     }
 
     if (persistedFile.fileNameInBucket) {

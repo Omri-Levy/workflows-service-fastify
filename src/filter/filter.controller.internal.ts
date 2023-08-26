@@ -1,4 +1,3 @@
-import * as errors from "../errors";
 import { isRecordNotFoundError } from "@/db/db.util";
 import { FilterFindManyArgs } from "@/filter/dtos/filter-find-many-args";
 import { FilterService } from "@/filter/filter.service";
@@ -6,6 +5,7 @@ import { FastifyPluginAsyncTypebox, Type } from "@fastify/type-provider-typebox"
 import { FilterRepository } from "@/filter/filter.repository";
 import { db } from "@/db/client";
 import { FilterSchema } from "@/common/schemas";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export const filterControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
   const filterRepository = new FilterRepository(
@@ -23,6 +23,10 @@ export const filterControllerInternal: FastifyPluginAsyncTypebox = async (fastif
         querystring: FilterFindManyArgs,
         response: {
           200: Type.Array(FilterSchema),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -53,6 +57,10 @@ export const filterControllerInternal: FastifyPluginAsyncTypebox = async (fastif
       }),
       response: {
         200: FilterSchema,
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
         404: Type.Object({
           status: Type.String(),
           message: Type.String()
@@ -75,7 +83,7 @@ export const filterControllerInternal: FastifyPluginAsyncTypebox = async (fastif
       return reply.send(filter);
     } catch (err) {
       if (isRecordNotFoundError(err)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
       }
 
       throw err;

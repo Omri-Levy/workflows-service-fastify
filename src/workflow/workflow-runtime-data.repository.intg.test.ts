@@ -13,13 +13,17 @@ import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.rep
 import { ArrayMergeOption, WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
 import { WorkflowService } from "@/workflow/workflow.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { PrismaService } from "@/db/client";
+import { db, PrismaService } from "@/db/client";
 
 describe('#Workflow Runtime Repository Integration Tests', () => {
   let workflowRuntimeRepository: WorkflowRuntimeDataRepository;
   let workflowDefinitionRepository: WorkflowDefinitionRepository;
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
   beforeAll(async () => {
     const servicesProviders = [
@@ -97,7 +101,7 @@ describe('#Workflow Runtime Repository Integration Tests', () => {
       });
 
       // The expected result should be the merged version of initial and updated context
-      expect(res.context).toMatchObject({
+      expect(res.context).toEqual({
         entity: {
           id: '2',
           name: 'UpdatedEntity',
@@ -130,7 +134,7 @@ describe('#Workflow Runtime Repository Integration Tests', () => {
         },
       });
 
-      expect(res).toMatchObject({
+      expect(res).toEqual({
         endUserId: null,
         businessId: null,
         assigneeId: null,

@@ -5,23 +5,24 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { WorkflowEventInput } from "./dtos/workflow-event-input";
 import {
-  Prisma,
   Business,
   EndUser,
+  Prisma,
   WorkflowDefinition,
   WorkflowRuntimeData,
   WorkflowRuntimeDataStatus
 } from "@prisma/client";
 import {
+  ListRuntimeDataResult,
   ListWorkflowsRuntimeParams,
   TWorkflowWithRelations,
   WorkflowRuntimeListQueryResult
 } from "./types";
 import { createWorkflow } from "@ballerine/workflow-node-sdk";
-import { WorkflowDefinitionUpdateInput } from "./dtos/workflow-definition-update-input";
+import { TWorkflowRuntimeDataUpdate } from "./dtos/workflow-runtime-data-update";
 import isEqual from "lodash/isEqual";
 import merge from "lodash/merge";
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestError } from "@/common/errors/bad-request-error";
 import { WorkflowDefinitionRepository } from "./workflow-definition.repository";
 import { WorkflowDefinitionCreateSchema } from "./dtos/workflow-definition-create";
 import { WorkflowDefinitionFindManyArgs } from "./dtos/workflow-definition-find-many-args";
@@ -61,6 +62,7 @@ import { SortOrder } from "@/common/query-filters/sort-order";
 import { logger } from "@/lib/logging/logger";
 import { ApprovalState } from "@/common/enums";
 import { Static } from "@sinclair/typebox";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 type TEntityId = string;
 
@@ -115,7 +117,6 @@ const policies = {
   }
 };
 
-@Injectable()
 export class WorkflowService {
   constructor(
     protected readonly workflowDefinitionRepository: WorkflowDefinitionRepository,
@@ -143,7 +144,8 @@ export class WorkflowService {
       extensions: true,
       persistStates: true,
       submitStates: true
-    };
+    } satisfies Prisma.WorkflowDefinitionSelect;
+
     return await this.workflowDefinitionRepository.create({ data, select });
   }
 
@@ -154,6 +156,7 @@ export class WorkflowService {
     return await this.workflowRuntimeDataRepository.findById(id, args);
   }
 
+  // TODO: Doesn't get relations (no endUser: true, etc.), relies on filter for relations.
   async getWorkflowByIdWithRelations(
     id: string,
     args?: Parameters<WorkflowRuntimeDataRepository["findById"]>[1]
@@ -176,17 +179,22 @@ export class WorkflowService {
         state: workflow.state
       }
     });
+    const { endUser, business, ...workflowWithoutEntity } = workflow;
 
     return {
-      ...workflow,
+      ...workflowWithoutEntity,
       context: {
-        ...workflow.context,
-        documents: workflow.context?.documents?.map(
+        ...workflowWithoutEntity.context,
+        documents: workflowWithoutEntity.context?.documents?.map(
           (document: DefaultContextSchema["documents"][number]) => {
             const documentsByCountry = getDocumentsByCountry(document?.issuer?.country);
             const documentByCountry = documentsByCountry?.find(
               doc => getDocumentId(doc, false) === getDocumentId(document, false)
             );
+
+            if (!documentByCountry?.propertiesSchema) {
+              logger.warn(`No propertiesSchema found for a document with an id of ${getDocumentId(document, false)}`);
+            }
 
             return {
               ...document,
@@ -196,17 +204,15 @@ export class WorkflowService {
         )
       },
       entity: {
-        id: isIndividual ? workflow.endUser.id : workflow.business.id,
+        id: isIndividual ? endUser.id : business.id,
         name: isIndividual
-          ? `${String(workflow.endUser.firstName)} ${String(workflow.endUser.lastName)}`
-          : workflow.business.companyName,
-        avatarUrl: isIndividual ? workflow.endUser.avatarUrl : null,
+          ? `${endUser.firstName} ${endUser.lastName}`
+          : business.companyName,
+        avatarUrl: isIndividual ? endUser.avatarUrl : null,
         approvalState: isIndividual
-          ? workflow.endUser.approvalState
-          : workflow.business.approvalState
+          ? endUser.approvalState
+          : business.approvalState
       },
-      endUser: undefined,
-      business: undefined,
       nextEvents: service.getSnapshot().nextEvents
     };
   }
@@ -283,7 +289,7 @@ export class WorkflowService {
     });
 
     if (page.number > 1 && totalWorkflowsCount < (page.number - 1) * page.size + 1) {
-      throw new NotFoundException("Page not found");
+      throw new NotFoundError("Page not found");
     }
 
     const workflows = await this.workflowRuntimeDataRepository.findMany(query);
@@ -297,7 +303,7 @@ export class WorkflowService {
     };
   }
 
-  private formatWorkflowsRuntimeData(workflows: TWorkflowWithRelations[]) {
+  private formatWorkflowsRuntimeData(workflows: TWorkflowWithRelations[]): ListRuntimeDataResult["results"] {
     return workflows.map(workflow => {
       const isIndividual = "endUser" in workflow;
 
@@ -455,7 +461,7 @@ export class WorkflowService {
     return await this.workflowDefinitionRepository.findMany({ ...args, select });
   }
 
-  async updateWorkflowRuntimeData(workflowRuntimeId: string, data: WorkflowDefinitionUpdateInput) {
+  async updateWorkflowRuntimeData(workflowRuntimeId: string, data: TWorkflowRuntimeDataUpdate) {
     const runtimeData = await this.workflowRuntimeDataRepository.findById(workflowRuntimeId);
     const workflowDef = await this.workflowDefinitionRepository.findById(
       runtimeData.workflowDefinitionId
@@ -489,12 +495,12 @@ export class WorkflowService {
         const isValidPropertiesSchema = validatePropertiesSchema(document?.properties);
 
         if (!isValidPropertiesSchema) {
-          throw new BadRequestException(
+          throw new BadRequestError(
             validatePropertiesSchema.errors?.map(({ instancePath, message, ...rest }) => ({
               ...rest,
               message: `${instancePath} ${message}`,
               instancePath
-            }))
+            })).join(", ")
           );
         }
       });
@@ -627,7 +633,7 @@ export class WorkflowService {
       );
 
     if (hasDecision) {
-      throw new BadRequestException(
+      throw new BadRequestError(
         `Workflow with the id of "${workflowRuntimeId}" already has a decision`
       );
     }
@@ -763,7 +769,7 @@ export class WorkflowService {
       if (entityType === "business") return await this.businessRepository.findById(entityId);
       if (entityType === "endUser") return await this.endUserRepository.findById(entityId);
 
-      throw new BadRequestException(`Invalid entity type ${entityType}`);
+      throw new BadRequestError(`Invalid entity type ${entityType}`);
     })();
     const isBusinessEntity = (entity: EndUser | Business): entity is Business =>
       entityType === "business";
@@ -814,7 +820,7 @@ export class WorkflowService {
     try {
       validatedConfig = ConfigSchema.parse(config);
     } catch (error) {
-      throw new BadRequestException(error);
+      throw new BadRequestError(error);
     }
     this.__validateWorkflowDefinitionContext(workflowDefinition, context);
     const entityId = await this.__findOrPersistEntityInformation(context);
@@ -960,7 +966,7 @@ export class WorkflowService {
     }
 
     if (!entity.data) {
-      throw new BadRequestException("Entity data is required");
+      throw new BadRequestError("Entity data is required");
     }
 
     if (entity.type === "individual") {
@@ -1025,12 +1031,12 @@ export class WorkflowService {
 
     if (isValid) return;
 
-    throw new BadRequestException(
+    throw new BadRequestError(
       validate.errors?.map(({ instancePath, message, ...rest }) => ({
         ...rest,
         instancePath,
         message: `${instancePath} ${message}`
-      }))
+      }))?.join(", ")
     );
   }
 
@@ -1097,7 +1103,7 @@ export class WorkflowService {
           );
           break;
         default:
-          throw new BadRequestException(
+          throw new BadRequestError(
             `Invalid resubmission reason ${resubmissionReason as string}`
           );
       }

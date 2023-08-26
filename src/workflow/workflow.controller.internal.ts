@@ -1,36 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import * as common from '@nestjs/common';
-import { UseGuards, UsePipes } from '@nestjs/common';
-import * as swagger from '@nestjs/swagger';
-import * as nestAccessControl from 'nest-access-control';
-import { isRecordNotFoundError } from '@/db/db.util';
-import * as errors from '../errors';
+import { isRecordNotFoundError } from "@/db/db.util";
 import { ResubmissionReason, TResubmissionReason, WorkflowService } from "./workflow.service";
-import { WorkflowDefinitionCreateSchema } from './dtos/workflow-definition-create';
-import { WorkflowDefinitionWhereUniqueInput } from './dtos/workflow-where-unique-input';
-import { WorkflowDefinitionModel } from './workflow-definition.model';
-import { WorkflowEventInput } from './dtos/workflow-event-input';
-import { UserData } from '@/user/user-data.decorator';
-import { UserInfo } from '@/user/user-info';
-import { WorkflowDefinition, WorkflowRuntimeData } from '@prisma/client';
-import { ApiNestedQuery } from '@/common/decorators/api-nested-query.decorator';
-import { WorkflowDefinitionUpdateInput } from '@/workflow/dtos/workflow-definition-update-input';
-import {
-  FindWorkflowsListDto,
-  FindWorkflowsListLogicSchema,
-  FindWorkflowsListSchema,
-} from '@/workflow/dtos/find-workflows-list.dto';
-import { ZodValidationPipe } from '@/common/pipes/zod.pipe';
-import { FilterService } from '@/filter/filter.service';
-import {
-  FindWorkflowParamsDto,
-  FindWorkflowQueryDto,
-  FindWorkflowQuerySchema,
-} from '@/workflow/dtos/find-workflow.dto';
-import { WorkflowAssigneeGuard } from '@/auth/workflow-assignee.guard';
-import { WorkflowAssigneeId } from '@/workflow/dtos/workflow-assignee-id';
+import { FindWorkflowsListLogicSchema, FindWorkflowsListSchema } from "@/workflow/dtos/find-workflows-list.dto";
+import { FilterService } from "@/filter/filter.service";
+
+
 import { EndUserRepository } from "@/end-user/end-user.repository";
 import { db } from "@/db/client";
 import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.repository";
@@ -39,181 +15,23 @@ import { BusinessRepository } from "@/business/business.repository";
 import { FileRepository } from "@/storage/storage.repository";
 import { StorageService } from "@/storage/storage.service";
 import { FileService } from "@/providers/file/file.service";
-import { WorkflowDefinitionSchema, WorkflowRuntimeDataSchema, WorkflowRuntimeDataStatusSchema } from "@/common/schemas";
+import {
+  WorkflowDefinitionSchema,
+  WorkflowRuntimeDataSchema,
+  WorkflowRuntimeDataStatusSchema
+} from "@/common/schemas";
 import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
-import { Type } from '@sinclair/typebox';
+import { Type } from "@sinclair/typebox";
 import { FilterRepository } from "@/filter/filter.repository";
-import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { ListWorkflowRuntimeDataWithRelationsReturnType } from "@/workflow/types";
+import { TypeNullable } from "@/common/validation";
+import { WorkflowDefinitionCreateSchema } from "@/workflow/dtos/workflow-definition-create";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import { NotFoundError } from "@/common/errors/not-found-error";
+import { WorkflowRuntimeDataUpdateSchema } from "@/workflow/dtos/workflow-runtime-data-update";
 
-@swagger.ApiTags('internal/workflows')
-@common.Controller('internal/workflows')
-export class WorkflowControllerInternal {
-  constructor(
-    protected readonly service: WorkflowService,
-    protected readonly filterService: FilterService,
-    @nestAccessControl.InjectRolesBuilder()
-    protected readonly rolesBuilder: nestAccessControl.RolesBuilder,
-  ) {}
-
-  @common.Post()
-  @swagger.ApiCreatedResponse({ type: WorkflowDefinitionModel })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async createWorkflowDefinition(
-    @UserData() userInfo: UserInfo,
-    @common.Body() data: WorkflowDefinitionCreateSchema,
-  ) {
-    return await this.service.createWorkflowDefinition(data);
-  }
-
-  @common.Get()
-  @swagger.ApiOkResponse()
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  @ApiNestedQuery(FindWorkflowsListDto)
-  @UsePipes(new ZodValidationPipe(FindWorkflowsListSchema, 'query'))
-  async listWorkflowRuntimeData(
-    @common.Query() { filterId, page, filter: filters, ...queryParams }: FindWorkflowsListDto,
-  ) {
-    const filter = await this.filterService.getById(filterId);
-
-    const entityType = filter.entity as 'individuals' | 'businesses';
-
-    const { orderBy } = FindWorkflowsListLogicSchema[entityType].parse(queryParams);
-
-    return await this.service.listWorkflowRuntimeDataWithRelations({
-      args: filter.query as any,
-      entityType,
-      orderBy,
-      page,
-      filters,
-    });
-  }
-
-  @common.Get('/:id')
-  @swagger.ApiOkResponse()
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  @ApiNestedQuery(FindWorkflowQueryDto)
-  @UsePipes(new ZodValidationPipe(FindWorkflowQuerySchema, 'query'))
-  async getRunnableWorkflowDataById(
-    @common.Param() { id }: FindWorkflowParamsDto,
-    @common.Query() { filterId }: FindWorkflowQueryDto,
-  ) {
-    const filter = await this.filterService.getById(filterId);
-
-    return await this.service.getWorkflowByIdWithRelations(id, filter.query as any);
-  }
-
-  @common.Get('/active-states')
-  @swagger.ApiOkResponse({ type: WorkflowDefinitionModel })
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async listActiveStates() {
-    try {
-      return await this.service.listActiveWorkflowsRuntimeStates();
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found`);
-      }
-      throw error;
-    }
-  }
-
-  @common.Post('/:id/event')
-  @swagger.ApiOkResponse()
-  @common.HttpCode(200)
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async event(
-    @common.Param() params: WorkflowDefinitionWhereUniqueInput,
-    @common.Body() data: WorkflowEventInput,
-  ): Promise<void> {
-    return await this.service.event({
-      ...data,
-      id: params.id,
-    });
-  }
-
-  // PATCH /workflows/:id
-  @common.Patch('/:id')
-  @swagger.ApiOkResponse({ type: WorkflowDefinitionModel })
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  @UseGuards(WorkflowAssigneeGuard)
-  async updateById(
-    @common.Param() params: WorkflowDefinitionWhereUniqueInput,
-    @common.Body() data: WorkflowDefinitionUpdateInput,
-  ): Promise<WorkflowRuntimeData> {
-    try {
-      return await this.service.updateWorkflowRuntimeData(params.id, data);
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(params)}`);
-      }
-      throw error;
-    }
-  }
-
-  // PATCH /workflows/assign/:id
-  // curl -X PATCH http://localhost:3000/api/v1/internal/workflows/assign/:workflowId \
-  // -H 'Content-Type: application/json' \
-  // -H 'Cookie: session=[SESSION]; session.sig=[SESSION_SIG]' \
-  // -d '{"assigneeId": "[ASSIGNEE_ID]"}'
-  @common.Patch('/assign/:id')
-  @swagger.ApiOkResponse({ type: WorkflowDefinitionModel })
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async assignWorkflowById(
-    @common.Param() params: WorkflowDefinitionWhereUniqueInput,
-    @common.Body() data: WorkflowAssigneeId,
-  ): Promise<WorkflowRuntimeData> {
-    try {
-      return await this.service.assignWorkflowToUser(params.id, data);
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(params)}`);
-      }
-      throw error;
-    }
-  }
-
-  @nestAccessControl.UseRoles({
-    resource: 'Workflow',
-    action: 'delete',
-    possession: 'own',
-  })
-  @common.Delete('/:id')
-  @swagger.ApiOkResponse({ type: WorkflowDefinitionModel })
-  @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
-  @swagger.ApiForbiddenResponse({ type: errors.ForbiddenException })
-  async deleteWorkflowDefinitionById(
-    @common.Param() params: WorkflowDefinitionWhereUniqueInput,
-  ): Promise<WorkflowDefinition> {
-    try {
-      return await this.service.deleteWorkflowDefinitionById(params.id, {
-        select: {
-          id: true,
-          name: true,
-          version: true,
-
-          definition: true,
-          definitionType: true,
-          backend: true,
-
-          extensions: true,
-          persistStates: true,
-          submitStates: true,
-        },
-      });
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(params)}`);
-      }
-      throw error;
-    }
-  }
-}
-
-export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
+export const workflowsControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
   const endUserRepository = new EndUserRepository(
     db
@@ -239,12 +57,23 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
   fastify.post("/", {
       schema: {
         description: "Creates a workflow definition",
-        tags: ["External", "Workflows"],
+        tags: ["Internal", "Workflows"],
         body: WorkflowDefinitionCreateSchema,
         response: {
-          200: Type.Omit(WorkflowDefinitionSchema, ["workflowRuntimeData"]),
+          201: Type.Pick(WorkflowDefinitionSchema, [
+              "id",
+              "name",
+              "version",
+              "definition",
+              "definitionType",
+              "backend",
+              "extensions",
+              "persistStates",
+              "submitStates"
+            ]
+          ),
           400: Type.Object({
-            status: Type.Optional(Type.String()),
+            status: Type.String(),
             message: Type.String()
           }),
           401: Type.Object({
@@ -262,27 +91,51 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
     async (req, reply) => {
       const workflowDefinition = await workflowService.createWorkflowDefinition(req.body);
 
-      return reply.send(workflowDefinition);
-    }
-  );
+      return reply.status(201).send(workflowDefinition);
+    });
 
   // listWorkflowRuntimeData
-  fastify.get("/",
-    {
+  fastify.get("/", {
       schema: {
         description: "Fetches a list of workflow runtime data",
-        tags: ["External", "Workflow"],
-        params: Type.Object({
-          id: Type.String({ description: "Unique ID of the workflow definition" })
-        }),
+        tags: ["Internal", "Workflow"],
         querystring: FindWorkflowsListSchema,
         response: {
-          200: Type.Object({
-            data: WorkflowRuntimeDataSchema,
-            meta: Type.Object({
-              totalItems: Type.Number(),
-              totalPages: Type.Number(),
-            })
+          200: typeboxBuilder<ListWorkflowRuntimeDataWithRelationsReturnType>()(
+            Type.Object({
+              data: typeboxBuilder<ListWorkflowRuntimeDataWithRelationsReturnType["data"]>()(
+                Type.Array(
+                  Type.Object({
+                    id: Type.String(),
+                    status: WorkflowRuntimeDataStatusSchema,
+                    createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
+                    entity: Type.Object({
+                      id: Type.Optional(Type.String()),
+                      name: Type.Optional(Type.String()),
+                      avatarUrl: Type.Optional(
+                        TypeNullable(
+                          Type.String()
+                        )
+                      )
+                    }),
+                    assignee: TypeNullable(
+                      Type.Object({
+                        id: Type.Optional(Type.String()),
+                        firstName: Type.Optional(Type.String()),
+                        lastName: Type.Optional(Type.String())
+                      })
+                    )
+                  })
+                )
+              ),
+              meta: Type.Object({
+                totalItems: Type.Number(),
+                totalPages: Type.Number()
+              })
+            })),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
           }),
           404: Type.Object({
             status: Type.String(),
@@ -303,32 +156,58 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
     async (req, reply) => {
       const { filterId, page, filter: filters, ...queryParams } = req.query;
       const filter = await filterService.getById(filterId);
-      const entityType = filter.entity as 'individuals' | 'businesses';
+      const entityType = filter.entity as "individuals" | "businesses";
       const { orderBy } = FindWorkflowsListLogicSchema[entityType].parse(queryParams);
-      const workflowRuntimeData = await workflowService.listWorkflowRuntimeDataWithRelations({
+      const workflowsRuntimeDataWithRelations = await workflowService.listWorkflowRuntimeDataWithRelations({
         args: filter.query as any,
         entityType,
         orderBy,
         page,
-        filters,
+        filters
       });
-
-      return reply.send(workflowRuntimeData);
+      console.log(workflowsRuntimeDataWithRelations);
+      return reply.send(workflowsRuntimeDataWithRelations);
     });
 
+
   // getRunnableWorkflowById
-  fastify.get("/:id",
-    {
+  fastify.get("/:id", {
       schema: {
-        description: "Retrieve an end-user by its unique ID",
-        tags: ["External", "Workflow"],
+        description: "Retrieve a workflow by its unique ID",
+        tags: ["Internal", "Workflow"],
+        querystring: Type.Object({
+          filterId: Type.String({ description: "Unique ID of a filter" })
+        }),
         params: Type.Object({
-          id: Type.String({ description: "Unique ID of the end user" })
+          id: Type.String({ description: "Unique ID of a workflow" })
         }),
         response: {
           200: Type.Object({
-            workflowDefinition: Type.Omit(WorkflowDefinitionSchema, ["workflowRuntimeData"]),
-            workflowRuntimeData: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"])
+            entity: Type.Object({
+              id: Type.String(),
+              name: Type.String(),
+              avatarUrl: Type.Optional(
+                TypeNullable(
+                  Type.String()
+                )
+              )
+            }),
+            assignee: Type.Optional(
+              TypeNullable(
+                Type.Object({
+                  id: Type.String(),
+                  firstName: Type.String(),
+                  lastName: Type.String()
+                }))
+            ),
+            nextEvents: Type.Array(Type.String())
+          }, {
+            additionalProperties: true,
+            description: "Response data may include other properties from workflowRuntimeData, or workflowDefinition depending on passed filter"
+          }),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
           }),
           404: Type.Object({
             status: Type.String(),
@@ -347,63 +226,86 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
       }
     },
     async (req, reply) => {
-      const filter = await this.filterService.getById(filterId);
-      const workflowRuntimeData = await this.workflowService.getRunnableWorkflowById(filter.query as any);
+      try {
+        const filter = await filterService.getById(req.query.filterId);
+        const workflowRuntimeData = await workflowService.getWorkflowByIdWithRelations(req.params.id, filter.query as any);
 
-      return reply.send(workflowRuntimeData);
+        return reply.send(workflowRuntimeData);
+      } catch (err) {
+
+        if (isRecordNotFoundError(err)) {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send({
+              status: getReasonPhrase(StatusCodes.NOT_FOUND),
+              message: `No resource was found for ${JSON.stringify(req.params.id)}`
+            });
+        }
+
+        throw err;
+      }
     });
 
   // listActiveStates
   fastify.get("/active-states", {
-    schema: {
-      description: "Update a workflow runtime data by its unique ID",
-      tags: ["External", "Workflow"],
-      params: Type.Object({
-        id: Type.String({ description: "ID of the workflow runtime data" })
-      }),
-      body: Type.Object({
-        status: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.status),
-        state: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.state),
-        context: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.context),
-        assigneeId: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.assigneeId),
-        resolvedAt: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.resolvedAt)
-      }),
-      response: {
-        200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
-        404: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        401: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        500: Type.Object({
-          status: Type.Optional(Type.String()),
-          code: Type.Optional(Type.Number()),
-          message: Type.String()
-        })
+      schema: {
+        description: "Fetches a list of workflow runtime data",
+        tags: ["Internal", "Workflows"],
+        response: {
+          200: Type.Array(
+            Type.Pick(
+              WorkflowRuntimeDataSchema,
+              [
+                "id",
+                "state",
+                "status",
+                "endUserId",
+                "businessId",
+                "assigneeId",
+                "workflowDefinitionId"
+              ]
+            )
+          ),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          404: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          401: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
+          })
+        }
       }
-    }
-  }, async (req, reply) => {
-    try {
-      const workflowRuntimeData = await workflowService.listActiveWorkflowsRuntimeStates();
+    },
+    async (req, reply) => {
+      try {
+        const workflowRuntimeData = await workflowService.listActiveWorkflowsRuntimeStates();
 
-      return reply.send(workflowRuntimeData);
-    } catch (err) {
-      if (isRecordNotFoundError(err)) {
-        throw new errors.NotFoundException(`No resource was found`);
+        return reply.send(workflowRuntimeData);
+      } catch (err) {
+        // TODO: Remove - this endpoint does not throw 404
+        if (isRecordNotFoundError(err)) {
+          throw new NotFoundError(`No resource was found`);
+        }
+
+        throw err;
       }
-
-      throw err;
-    }
-  });
+    });
 
   // event
   fastify.post("/:id/event", {
       schema: {
         description: "Send an event to the workflow with a payload",
-        tags: ["External", "Workflows"],
+        tags: ["Internal", "Workflows"],
         params: Type.Object({
           id: Type.String({ description: "ID of the workflow" })
         }),
@@ -428,102 +330,18 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
               })
             )
           )
+        }, {
+          additionalProperties: false
         }),
         response: {
           200: {
             type: "null",
             description: "Event sent successfully"
           },
-          404: Type.Object({
+          400: Type.Object({
             status: Type.String(),
             message: Type.String()
           }),
-          401: Type.Object({
-            status: Type.String(),
-            message: Type.String()
-          }),
-          500: Type.Object({
-            status: Type.Optional(Type.String()),
-            code: Type.Optional(Type.Number()),
-            message: Type.String()
-          })
-        }
-      }
-    }
-    , async (req, reply) => {
-      await workflowService.event({
-        ...req.body,
-        id: req.params.id
-      });
-
-      return reply.send();
-    });
-
-  // updateById
-  fastify.patch("/:id", {
-    schema: {
-      description: "Update a workflow runtime data by its unique ID",
-      tags: ["External", "Workflow"],
-      params: Type.Object({
-        id: Type.String({ description: "ID of the workflow runtime data" })
-      }),
-      body: Type.Object({
-        status: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.status),
-        state: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.state),
-        context: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.context),
-        assigneeId: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.assigneeId),
-        resolvedAt: Type.Optional(WorkflowRuntimeDataStatusSchema.properties.resolvedAt)
-      }),
-      response: {
-        200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
-        404: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        401: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        500: Type.Object({
-          status: Type.Optional(Type.String()),
-          code: Type.Optional(Type.Number()),
-          message: Type.String()
-        })
-      }
-    }
-  }, async (req, reply) => {
-    try {
-      const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(req.params.id, req.body);
-
-      return reply.send(workflowRuntimeData);
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
-      }
-      throw error;
-    }
-  });
-
-  // assignWorkflowById
-  fastify.patch("/assign/:id", {
-      schema: {
-        description: "Retrieve a",
-        tags: ["External", "Workflows"],
-        body: Type.Object({
-          entityId: Type.String({ description: "ID of the business or individual" }),
-          intentName: Type.String({ description: "Name of the intent" })
-        }),
-        response: {
-          200: Type.Tuple([
-              Type.Object({
-                workflowDefinition: Type.Omit(WorkflowDefinitionSchema, ["workflowRuntimeData"]),
-                workflowRuntimeData: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
-                ballerineEntityId: Type.String({
-                  description: "ID of the business or individual"
-                })
-              })
-            ]
-          ),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -542,74 +360,187 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
     }
     , async (req, reply) => {
       try {
-        const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(params.id, data);
+        const { name, document, resubmissionReason } = req.body;
 
-        return workflowRuntimeData;
-      } catch (error) {
-        if (isRecordNotFoundError(error)) {
-          throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        await workflowService.event({
+          id: req.params.id,
+          name,
+          document,
+          resubmissionReason
+        });
+
+        return reply.send();
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
         }
 
-        throw error;
+        throw err;
+      }
+    });
+
+  // updateById
+  fastify.patch("/:id", {
+      schema: {
+        description: "Update a workflow runtime data by its unique ID",
+        tags: ["Internal", "Workflow"],
+        params: Type.Object({
+          id: Type.String({ description: "ID of the workflow runtime data" })
+        }),
+        body: WorkflowRuntimeDataUpdateSchema,
+        response: {
+          200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          404: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          401: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
+          })
+        }
+      }
+    },
+    async (req, reply) => {
+      try {
+        const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(req.params.id, req.body);
+
+        return reply.send(workflowRuntimeData);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        }
+        throw err;
+      }
+    });
+
+  // assignWorkflowById
+  fastify.patch("/assign/:id", {
+      schema: {
+        description: "Assign a workflow runtime data by its unique ID to a user",
+        tags: ["Internal", "Workflows"],
+        params: Type.Object({
+          id: Type.String({ description: "Unique ID of the workflow" })
+        }),
+        body: Type.Object({
+          assigneeId: TypeNullable(
+            Type.String({ description: "ID of the user to assign the workflow to" })
+          )
+        }, {
+          additionalProperties: false
+        }),
+        response: {
+          200: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"]),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          404: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          401: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
+          })
+        }
+      }
+    }
+    , async (req, reply) => {
+      try {
+        const workflowRuntimeData = await workflowService.assignWorkflowToUser(req.params.id, req.body);
+
+        return reply.send(workflowRuntimeData);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        }
+        throw err;
       }
     });
 
   // deleteWorkflowDefinitionById
   fastify.delete("/:id", {
-    schema: {
-      description: "Creates or updates an entity and a workflow runtime data",
-      tags: ["External", "Workflows"],
-      body: Type.Object({
-        workflowId: Type.String({ description: "ID of the workflow" }),
-        context: WorkflowRuntimeDataSchema.properties.context,
-        config: WorkflowRuntimeDataSchema.properties.config
-      }),
-      response: {
-        200: Type.Object({
-          workflowDefinitionId: Type.String(),
-          workflowRuntimeId: Type.String(),
-          ballerineEntityId: Type.String({
-            description: "ID of the business or individual"
+      schema: {
+        description: "Delete a workflow definition by its unique ID",
+        tags: ["Internal", "Workflows"],
+        params: Type.Object({
+          id: Type.String({ description: "ID of the workflow" })
+        }),
+        response: {
+          200: Type.Pick(
+            WorkflowDefinitionSchema,
+            [
+              "id",
+              "name",
+              "version",
+              "definition",
+              "definitionType",
+              "backend",
+              "extensions",
+              "persistStates",
+              "submitStates"
+            ]
+          ),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          404: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          401: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
           })
-        }),
-        404: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        401: Type.Object({
-          status: Type.String(),
-          message: Type.String()
-        }),
-        500: Type.Object({
-          status: Type.Optional(Type.String()),
-          code: Type.Optional(Type.Number()),
-          message: Type.String()
-        })
+        }
       }
-    }
-  }, async (req, reply) => {
-    try {
-      return await this.service.deleteWorkflowDefinitionById(params.id, {
-        select: {
-          id: true,
-          name: true,
-          version: true,
+    },
+    async (req, reply) => {
+      try {
+        const workflowDefinition = await workflowService.deleteWorkflowDefinitionById(req.params.id, {
+          select: {
+            id: true,
+            name: true,
+            version: true,
 
-          definition: true,
-          definitionType: true,
-          backend: true,
+            definition: true,
+            definitionType: true,
+            backend: true,
 
-          extensions: true,
-          persistStates: true,
-          submitStates: true,
-        },
-      });
-    } catch (error) {
-      if (isRecordNotFoundError(error)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(params)}`);
+            extensions: true,
+            persistStates: true,
+            submitStates: true
+          }
+        });
+
+        return reply.send(workflowDefinition);
+      } catch (err) {
+        if (isRecordNotFoundError(err)) {
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        }
+        throw err;
       }
-      throw error;
-    }
-  });
+    });
 
 };

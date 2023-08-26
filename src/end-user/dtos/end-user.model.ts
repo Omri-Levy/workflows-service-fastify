@@ -1,32 +1,25 @@
 import { Type } from "@sinclair/typebox";
-import { createJsonValue } from "@/common/validation";
+import { createJsonValue, TypeNullable } from "@/common/validation";
 
 export const EndUserModel = Type.Object({
   id: Type.String(),
   isContactPerson: Type.Boolean(),
-  correlationId: Type.Union([Type.String(), Type.Null()]),
-  endUserType: Type.Union([Type.String(), Type.Null()]),
+  correlationId: TypeNullable(Type.String()),
+  endUserType: TypeNullable(Type.String()),
   approvalState: Type.String(),
-  stateReason: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  stateReason: Type.Optional(TypeNullable(Type.String())),
   firstName: Type.String(),
   lastName: Type.String(),
-  email: Type.Union([Type.String({ format: "email" }), Type.Null()]),
-  phone: Type.Optional(Type.Union([Type.String(), Type.Null()])),
-  country: Type.Optional(Type.Union([Type.String(), Type.Null()])),
-  dateOfBirth: Type.Union([
-    Type.String({
-      format: "date-time"
-    }),
-    Type.Null()
-  ]),
-  avatarUrl: Type.Optional(Type.Union([Type.String(), Type.Null()])),
-  nationalId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  email: TypeNullable(Type.String({ format: "email" })),
+  phone: Type.Optional(TypeNullable(Type.String())),
+  country: Type.Optional(TypeNullable(Type.String())),
+  dateOfBirth: TypeNullable(
+    Type.Unsafe<Date>({ type: "string", format: "date-time" })
+  ),
+  avatarUrl: Type.Optional(TypeNullable(Type.String())),
+  nationalId: Type.Optional(TypeNullable(Type.String())),
   // @ts-ignore - Possibly infinite type
   additionalInfo: Type.Optional(createJsonValue("EndUserAdditionalInfo")),
-  createdAt: Type.String({
-    format: "date-time"
-  }),
-  updatedAt: Type.String({
-    format: "date-time"
-  })
+  createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
+  updatedAt: Type.Unsafe<Date>({ type: "string", format: "date-time" })
 });

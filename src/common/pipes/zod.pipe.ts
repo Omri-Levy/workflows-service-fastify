@@ -1,4 +1,4 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { ZodSchema } from 'zod';
 import { Paramtype } from '@nestjs/common/interfaces/features/paramtype.interface';
 
@@ -14,7 +14,7 @@ export class ZodValidationPipe implements PipeTransform {
     const result = this.schema.safeParse(value);
 
     if (!result.success) {
-      throw new BadRequestException(result.error.errors);
+      throw new BadRequestError(result.error.errors);
     }
 
     return result.data;

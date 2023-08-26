@@ -24,6 +24,10 @@ import { userControllerInternal } from "@/user/user.controller.internal";
 import { healthController } from "@/health/health.controller";
 import { SentryErrorHandlerPlugin } from "@/sentry/sentry-plugin";
 import { sentryInit } from "@/sentry/sentry-init";
+import { workflowsControllerExternal } from "@/workflow/workflow.controller.external";
+import { workflowsControllerInternal } from "@/workflow/workflow.controller.internal";
+import qs from 'qs';
+import { ErrorHandlerPlugin } from "@/common/errors/error-handler-plugin";
 
 // This line is used to improve Sentry's stack traces
 // https://docs.sentry.io/platforms/node/typescript/#changing-events-frames
@@ -37,9 +41,11 @@ export const build = async () => {
   const app = fastify({
     requestIdHeader: false,
     genReqId: () => randomUUID(),
-    bodyLimit: Number.MAX_VALUE, // Body limit is configured in Nginx
+    bodyLimit: Number.MAX_VALUE, // Body limit is configured in Nginx,
+    querystringParser: (string_) => qs.parse(string_),
   });
 
+  app.setErrorHandler(ErrorHandlerPlugin)
   app.withTypeProvider<TypeBoxTypeProvider>();
 
   // This must register first
@@ -75,6 +81,10 @@ export const build = async () => {
       maxAge: 1000 * 60 * 60 * 1 // 1 hour
     }
   });
+
+  // if (config.validateHttpResponses) {
+  //   await app.register(ResponseValidationPlugin);
+  // }
 
   app.addHook("preHandler", (req, reply, done) => {
     if (!req.session) return done();
@@ -112,6 +122,7 @@ export const build = async () => {
       await fastify.register(businessControllerInternal, { prefix: "/businesses" });
       await fastify.register(userControllerInternal, { prefix: "/users" });
       await fastify.register(authControllerInternal, { prefix: "/auth" });
+      await fastify.register(workflowsControllerInternal, { prefix: "/workflows" });
 
     };
   const externalRouter: FastifyPluginAsync = async (fastify) => {
@@ -120,6 +131,7 @@ export const build = async () => {
     await fastify.register(storageControllerExternal, { prefix: "/storage" });
     await fastify.register(endUserControllerExternal, { prefix: "/end-users" });
     await fastify.register(businessControllerExternal, { prefix: "/businesses" });
+    await fastify.register(workflowsControllerExternal, { prefix: "/workflows" });
 
   };
 
@@ -128,7 +140,7 @@ export const build = async () => {
     await fastify.register(metricsController, { prefix: "/metrics" });
     await fastify.register(internalRouter, { prefix: "/internal" });
     await fastify.register(externalRouter, { prefix: "/external" });
-    await fastify.register(healthController, { prefix: "/health" })
+    await fastify.register(healthController, { prefix: "/health" });
 
   };
 
@@ -136,6 +148,8 @@ export const build = async () => {
 
   app.ready((err) => {
     if (err) throw err;
+
+    if (env.NODE_ENV === "test") return;
 
     console.log(app.printRoutes());
   });

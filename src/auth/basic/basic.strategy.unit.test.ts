@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { mock } from 'jest-mock-extended';
 import { AuthService } from '../auth.service';
 import { BasicStrategy } from './basic.strategy';
@@ -29,6 +29,6 @@ describe('Testing the basicStrategyBase.validate()', () => {
     //ACT
     const result = basicStrategy.validate('noUsername', TEST_PASSWORD);
     //ASSERT
-    return expect(result).rejects.toThrowError(UnauthorizedException);
+    return expect(result).rejects.toThrowError(UnauthorizedError);
   });
 });

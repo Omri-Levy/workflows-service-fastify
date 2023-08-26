@@ -1,16 +1,17 @@
-import * as errors from "../errors";
 import { isRecordNotFoundError, isUniqueConstraintError } from "@/db/db.util";
 import { FilterFindManyArgs } from "@/filter/dtos/filter-find-many-args";
 import { FilterService } from "@/filter/filter.service";
-import { FilterCreateSchema } from "@/filter/dtos/temp-zod-schemas";
 import { InputJsonValue } from "@/types";
 import { FilterRepository } from "@/filter/filter.repository";
 import { db } from "@/db/client";
 import { FastifyPluginAsyncTypebox, Type } from "@fastify/type-provider-typebox";
-import { z } from "zod";
-import { BadRequestException } from "@nestjs/common/exceptions/bad-request.exception";
+import { ZodError } from "zod";
 import { FilterSchema } from "@/common/schemas";
-import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import { NotFoundError } from "@/common/errors/not-found-error";
+import { ZodValidationError } from "@/common/errors/zod-validation-error";
+import { BadRequestError } from "@/common/errors/bad-request-error";
+
+import { FilterCreateSchema } from "@/filter/dtos";
 
 export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
   const filterRepository = new FilterRepository(
@@ -27,13 +28,24 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
       body: Type.Object({
         name: Type.String(),
         entity: Type.Union([Type.Literal("individuals"), Type.Literal("businesses")]),
-        query: Type.Pick(FilterSchema, ["query"]),
+        query: FilterSchema.properties.query
+      }, {
+        additionalProperties: false
       }),
       response: {
         201: FilterSchema,
         400: Type.Object({
           status: Type.Optional(Type.String()),
-          message: Type.String()
+          message: Type.String(),
+          errors: Type.Optional(
+            Type.Array(
+              Type.Object({
+                field: Type.String(),
+                type: Type.String(),
+                message: Type.String()
+              })
+            )
+          )
         }),
         401: Type.Object({
           status: Type.String(),
@@ -58,18 +70,15 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
 
       return reply.status(201).send(filter);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        throw new BadRequestException(err);
+      if (err instanceof ZodError) {
+        throw new ZodValidationError(err);
       }
 
-      if (!isUniqueConstraintError(err)) {
-        throw err;
+      if (isUniqueConstraintError(err)) {
+        throw new BadRequestError("Name already in use");
       }
 
-      return reply.status(StatusCodes.BAD_REQUEST).send({
-        status: getReasonPhrase(StatusCodes.BAD_REQUEST),
-        message: "Name already in use"
-      });
+      throw err;
     }
   });
 
@@ -81,6 +90,10 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
         querystring: FilterFindManyArgs,
         response: {
           200: Type.Array(FilterSchema),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -111,6 +124,10 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
       }),
       response: {
         200: FilterSchema,
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
         404: Type.Object({
           status: Type.String(),
           message: Type.String()
@@ -133,7 +150,7 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
       return reply.send(filter);
     } catch (err) {
       if (isRecordNotFoundError(err)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
       }
 
       throw err;

@@ -28,7 +28,9 @@ export const userControllerInternal: FastifyPluginAsyncTypebox = async (fastify)
           lastName: Type.String(),
           password: Type.String(),
           roles: Type.Array(Type.String())
-        }),
+        }, {
+    additionalProperties: false
+  }),
         response: {
           201: Type.Pick(UserSchema, [
             "id",
@@ -40,7 +42,7 @@ export const userControllerInternal: FastifyPluginAsyncTypebox = async (fastify)
             "workflowRuntimeData"
           ]),
           400: Type.Object({
-            status: Type.Optional(Type.String()),
+            status: Type.String(),
             message: Type.String()
           }),
           401: Type.Object({

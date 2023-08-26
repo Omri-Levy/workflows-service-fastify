@@ -74,10 +74,10 @@ export const _FindWorkflowsListSchema = z.object({
 
 export const FindWorkflowsListSchema = Type.Object({
   filterId: Type.String(),
-  orderBy: Type.String(),
+  orderBy: Type.Optional(Type.String()),
   page: Type.Object({
-    number: Type.Number({ minimum: 0, integer: true }),
-    size: Type.Number({ minimum: 0, integer: true }),
+    number: Type.Integer({ minimum: 0 }),
+    size: Type.Integer({ minimum: 0 }),
   }),
   filter: Type.Optional(Type.Object({
     assigneeId: Type.Optional(Type.Array(Type.Union([

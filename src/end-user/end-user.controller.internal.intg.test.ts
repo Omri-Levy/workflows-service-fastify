@@ -16,9 +16,12 @@ describe("/api/v1/internal/end-users #api #integration #internal", () => {
   beforeAll(async () => {
     app = await build();
   });
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
-
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
   describe("GET /", () => {
 
@@ -134,11 +137,11 @@ describe("/api/v1/internal/end-users #api #integration #internal", () => {
 
       // Assert
       expect(res.statusCode).toBe(200);
-      expect(json).toMatchObject(expect.objectContaining({
+      expect(json).toMatchObject({
         id: expect.any(String),
         firstName: "test",
         lastName: "lastName"
-      }));
+      });
     });
   });
 

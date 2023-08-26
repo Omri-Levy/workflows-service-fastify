@@ -1,5 +1,6 @@
 import { build } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
+import { db } from "@/db/client";
 
 describe("/api/v1/health #api #integration", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -7,8 +8,12 @@ describe("/api/v1/health #api #integration", () => {
   beforeAll(async () => {
     app = await build();
   });
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
 
   describe("GET /live", () => {

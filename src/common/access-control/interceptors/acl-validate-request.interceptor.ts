@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { InjectRolesBuilder, Role, RolesBuilder } from 'nest-access-control';
 import { Reflector } from '@nestjs/core';
 import * as abacUtil from '../abac.util';
-import { ForbiddenException } from '../../../errors';
+import { ForbiddenError } from '@/common/errors/forbidden-error';
 
 @Injectable()
 export class AclValidateRequestInterceptor implements NestInterceptor {
@@ -34,7 +34,7 @@ export class AclValidateRequestInterceptor implements NestInterceptor {
     const invalidAttributes = abacUtil.getInvalidAttributes(permission, inputDataToValidate);
 
     if (invalidAttributes.length) {
-      throw new ForbiddenException('Insufficient privileges to complete the operation');
+      throw new ForbiddenError('Insufficient privileges to complete the operation');
     }
 
     return next.handle();

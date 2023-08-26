@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { UserService } from '../../user/user.service';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -6,7 +6,6 @@ import { IAuthStrategy } from '../types';
 import { UserInfo } from '../../user/user-info';
 import { env } from '@/env';
 
-@Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) implements IAuthStrategy {
   constructor(protected readonly userService: UserService) {
     super({
@@ -20,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) implements IAuthStra
     const { id } = payload;
     const user = await this.userService.getById(id);
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedError();
     }
     if (!Array.isArray(user.roles) || typeof user.roles !== 'object' || user.roles === null) {
       throw new Error('User roles is not a valid value');

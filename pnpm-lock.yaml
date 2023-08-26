@@ -173,6 +173,9 @@ dependencies:
   pino:
     specifier: ^8.15.0
     version: 8.15.0
+  qs:
+    specifier: ^6.11.2
+    version: 6.11.2
   reflect-metadata:
     specifier: 0.1.13
     version: 0.1.13
@@ -241,6 +244,9 @@ devDependencies:
   '@types/passport-local':
     specifier: ^1.0.35
     version: 1.0.35
+  '@types/qs':
+    specifier: ^6.9.7
+    version: 6.9.7
   '@types/supertest':
     specifier: 2.0.11
     version: 2.0.11
@@ -8537,7 +8543,6 @@ packages:
     engines: {node: '>=0.6'}
     dependencies:
       side-channel: 1.0.4
-    dev: true
 
   /qs@6.7.0:
     resolution: {integrity: sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==}

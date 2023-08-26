@@ -188,7 +188,7 @@
 // 				stdoutWriteSpy.mock.calls[0]?.[0] as string,
 // 			) as any;
 // 			expect(logObject).toHaveProperty('error');
-// 			expect(logObject?.error).toEqual({
+// 			expect(logObject?.error).MatchObject({
 // 				message: 'Some error',
 // 				stack: expect.any(String),
 // 				type: 'Error',

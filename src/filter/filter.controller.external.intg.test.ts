@@ -24,8 +24,12 @@ describe("/api/v1/external/filters #api #integration #external", () => {
   beforeAll(async () => {
     app = await build();
   });
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
 
   describe("GET /", () => {
@@ -63,13 +67,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       await filterService.create({
         data: {
           name: "test1",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -77,13 +89,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       await filterService.create({
         data: {
           name: "test2",
-          entity: "individual",
+          entity: "individuals",
           query: {
             select: {
-              lastName: true,
+              endUser: {
+                select: {
+                  lastName: true
+                }
+              }
             },
             where: {
-              firstName: "firstName2"
+              endUser: {
+                is: {
+                  firstName: "firstName2"
+                }
+              }
             }
           }
         }
@@ -99,32 +119,48 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       // Assert
       expect(res.statusCode).toBe(200);
       expect(json).toEqual([
-       expect.objectContaining({
-          id: expect.any(String),
-          name: "test1",
-          entity: "business",
-         query: {
-            select: {
-              firstName: true,
-            },
-            where: {
-              lastName: "lastName"
-            }
-         }
-       }),
         expect.objectContaining({
           id: expect.any(String),
-          name: "test2",
-          entity: "individual",
+          name: "test1",
+          entity: "businesses",
           query: {
             select: {
-              lastName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              firstName: "firstName2"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }),
+        expect.objectContaining({
+          id: expect.any(String),
+          name: "test2",
+          entity: "individuals",
+          query: {
+            select: {
+              endUser: {
+                select: {
+                  lastName: true
+                }
+              }
+            },
+            where: {
+              endUser: {
+                is: {
+                  firstName: "firstName2"
+                }
+              }
+            }
+          }
+        })
       ]);
     });
   });
@@ -161,13 +197,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       const filter = await filterService.create({
         data: {
           name: "test3",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -185,15 +229,26 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       expect(json).toMatchObject({
         id: expect.any(String),
         name: "test3",
-        entity: "business",
+        entity: "businesses",
         query: {
           select: {
-            firstName: true,
+            business: {
+              select: {
+                companyName: true
+              }
+            }
           },
           where: {
-            lastName: "lastName"
+            business: {
+              is: {
+                registrationNumber: "registrationNumber"
+              }
+            }
           }
-        }
+        },
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        createdBy: "SYSTEM",
       });
     });
   });
@@ -255,13 +310,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
         url: "/api/v1/external/filters",
         body: {
           name: "test4",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  companyName: "companyName"
+                }
+              }
             }
           }
         }
@@ -274,28 +337,50 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       expect(json).toMatchObject({
         id: expect.any(String),
         name: "test4",
-        entity: "business",
+        entity: "businesses",
         query: {
           select: {
-            firstName: true,
+            business: {
+              select: {
+                companyName: true
+              }
+            }
           },
           where: {
-            lastName: "lastName"
+            business: {
+              is: {
+                companyName: "companyName"
+              }
+            }
           }
-        }
+        },
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        createdBy: "SYSTEM"
       });
       expect(filter).toMatchObject({
         id: expect.any(String),
         name: "test4",
-        entity: "business",
+        entity: "businesses",
         query: {
           select: {
-            firstName: true,
+            business: {
+              select: {
+                companyName: true
+              }
+            }
           },
           where: {
-            lastName: "lastName"
+            business: {
+              is: {
+                companyName: "companyName"
+              }
+            }
           }
-        }
+        },
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        createdBy: "SYSTEM"
       });
     });
 
@@ -306,13 +391,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       const filter = await filterService.create({
         data: {
           name: "test5",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -336,19 +429,18 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       // Assert
       expect(workflowService.listWorkflowRuntimeDataWithRelations({
         args: filter.query as any,
-        entityType: 'businesses',
-        orderBy: 'createdAt:asc',
+        entityType: "businesses",
+        orderBy: "createdAt:asc",
         page: {
           number: 1,
           size: 10
         },
-        filters: {},
-      }))
+        filters: {}
+      })).not.toThrowError();
 
     });
 
-    // Currently `correlationId` is not passed at `create`, and `update` is not exposed
-    it.skip("should return 400 for duplicate `name`", async () => {
+    it("should return 400 for duplicate `name`", async () => {
       // Arrange
 
       // Act
@@ -357,13 +449,21 @@ describe("/api/v1/external/filters #api #integration #external", () => {
         url: "/api/v1/external/filters",
         body: {
           name: "test",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -373,22 +473,30 @@ describe("/api/v1/external/filters #api #integration #external", () => {
         url: "/api/v1/external/filters",
         body: {
           name: "test",
-          entity: "individual",
+          entity: "individuals",
           query: {
             select: {
-              lastName: true,
+              endUser: {
+                select: {
+                  lastName: true
+                }
+              }
             },
             where: {
-              firstName: "firstName2"
+              endUser: {
+                is: {
+                  firstName: "firstName2"
+                }
+              }
             }
           }
         }
       });
-      const duplicateCorrelationIdJson = await duplicateNameRes.json();
+      const duplicateNameJson = await duplicateNameRes.json();
 
       // Assert
       expect(duplicateNameRes.statusCode).toBe(400);
-      expect(duplicateCorrelationIdJson.message).toBe("Name already in use");
+      expect(duplicateNameJson.message).toBe("Name already in use");
     });
   });
 });

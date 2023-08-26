@@ -1,6 +1,6 @@
 import { TLocalFilePath, TRemoteFileConfig } from './types/files-types';
 import * as tmp from 'tmp';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestError } from "@/common/errors/bad-request-error";
 import { IStreamableFileProvider } from './types/interfaces';
 import { TFileServiceProvider } from './types';
 import console from 'console';
@@ -43,7 +43,7 @@ export class FileService {
         `Unable to download file - ${remoteFileName} - ` +
           (isErrorWithMessage(ex) ? ex.message : ''),
       );
-      throw new BadRequestException(
+      throw new BadRequestError(
         `Unable to download file -  ${remoteFileName}, Please check the validity of the file path and access`,
       );
     }

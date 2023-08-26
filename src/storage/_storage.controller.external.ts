@@ -1,11 +1,11 @@
 import { UploadedFile } from "@nestjs/common";
 import { StorageService } from "./storage.service";
-import * as errors from "../errors";
 import { downloadFileFromS3 } from "@/storage/get-file-storage-manager";
 import { AwsS3FileConfig } from "@/providers/file/file-provider/aws-s3-file.config";
 import * as os from "os";
 import * as path from "path";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 // Temporarily identical to StorageControllerInternal
 export class StorageControllerExternal {
@@ -53,7 +53,7 @@ export class StorageControllerExternal {
     });
 
     if (!persistedFile) {
-      throw new errors.NotFoundException('file not found');
+      throw new NotFoundError('file not found');
     }
 
     return reply.send(persistedFile);
@@ -68,7 +68,7 @@ export class StorageControllerExternal {
     });
 
     if (!persistedFile) {
-      throw new errors.NotFoundException('file not found');
+      throw new NotFoundError('file not found');
     }
 
     if (persistedFile.fileNameInBucket) {

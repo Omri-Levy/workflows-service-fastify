@@ -1,7 +1,7 @@
 import { WorkflowDefinitionWhereUniqueInput } from './workflow-where-unique-input';
-import { WorkflowDefinitionUpdateInput } from './workflow-definition-update-input';
+import { WorkflowRuntimeDataUpdateSchema } from './workflow-runtime-data-update';
 
 export class WorkflowDefinitionUpdateArgs {
   where!: WorkflowDefinitionWhereUniqueInput;
-  data!: WorkflowDefinitionUpdateInput;
+  data!: WorkflowRuntimeDataUpdateSchema;
 }

@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { mock } from 'jest-mock-extended';
 import { JwtStrategy } from './jwt.strategy';
 import { UserService } from '../../user/user.service';
@@ -22,6 +22,6 @@ describe.skip('Testing the jwtStrategyBase.validate()', () => {
       roles: TEST_USER.roles,
     });
     //ASSERT
-    return expect(result).rejects.toThrowError(UnauthorizedException);
+    return expect(result).rejects.toThrowError(UnauthorizedError);
   });
 });

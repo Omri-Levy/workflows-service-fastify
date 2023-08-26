@@ -2,6 +2,7 @@ import { pino } from 'pino';
 
 import { config } from '../config/config';
 import { getRequestContext } from '../request-context/request-context';
+import { env } from "@/env";
 
 export type LoggerInterface = ReturnType<typeof createLoggerInstance>;
 
@@ -33,7 +34,7 @@ function createLoggerInstance() {
 	return pino({
 		messageKey: 'message',
 		errorKey: 'error',
-		level: config.log.level,
+		level: env.NODE_ENV === 'test' ? 'error' : config.log.level,
 		/* c8 ignore start */
 		...(config.log.enablePretty
 			? {

@@ -1,6 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
 import { WorkflowRuntimeData } from "@prisma/client";
+import { TypeNullable } from "@/common/validation";
 
 export const ApprovalStateSchema = Type.Union([
   Type.Literal("APPROVED"),
@@ -21,13 +22,13 @@ export const BaseUserSchema = Type.Object({
   lastName: Type.String(),
   email: Type.String(),
   phone: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   password: Type.String(),
   roles: Type.Any(),
   createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
   updatedAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
-  lastActiveAt: Type.Optional(Type.String({ format: "date-time" }))
+  lastActiveAt: Type.Optional(Type.Unsafe<Date>({ type: "string", format: "date-time" }))
 });
 
 export const EntitiesSchema = Type.Object({
@@ -48,37 +49,36 @@ export const BaseEndUserSchema = Type.Object({
   id: Type.String(),
   isContactPerson: Type.Boolean({ default: false }),
   correlationId: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   endUserType: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   approvalState: ApprovalStateSchema,
   stateReason: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   firstName: Type.String(),
   lastName: Type.String(),
   email: Type.Optional(
-    Type.Union([Type.String({ format: "email" }), Type.Null()])
+    TypeNullable(Type.String({ format: "email" }))
   ),
   phone: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   country: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   dateOfBirth: Type.Optional(
-    Type.Union([
+    TypeNullable(
       Type.Unsafe<Date>({ type: "string", format: "date-time" }),
-      Type.Null()
-    ])
+      )
   ),
   avatarUrl: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   nationalId: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   additionalInfo: Type.Optional(Type.Any()),
   createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
@@ -89,58 +89,57 @@ export const BaseEndUserSchema = Type.Object({
 export const BaseBusinessSchema = Type.Object({
   id: Type.String(),
   correlationId: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
   updatedAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
   companyName: Type.String(),
   registrationNumber: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   legalForm: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   country: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   countryOfIncorporation: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   dateOfIncorporation: Type.Optional(
-    Type.Union([
+    TypeNullable(
       Type.Unsafe<Date>({ type: "string", format: "date-time" }),
-      Type.Null()
-    ])
+    )
   ),
   address: Type.Optional(Type.Any()),
   phoneNumber: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   email: Type.Optional(
-    Type.Union([Type.String({ format: "email" }), Type.Null()])
+    TypeNullable(Type.String({ format: "email" }))
   ),
   website: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   industry: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   taxIdentificationNumber: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   vatNumber: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   shareholderStructure: Type.Optional(Type.Any()),
   numberOfEmployees: Type.Optional(
-    Type.Union([Type.Number(), Type.Null()])
+    TypeNullable(Type.Number())
   ),
   businessPurpose: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   documents: Type.Optional(Type.Any()),
   avatarUrl: Type.Optional(
-    Type.Union([Type.String(), Type.Null()])
+    TypeNullable(Type.String())
   ),
   additionalInfo: Type.Optional(Type.Any()),
   bankInformation: Type.Optional(Type.Any()),
@@ -156,48 +155,31 @@ export const BaseWorkflowRuntimeDataSchema =
   typeboxBuilder<WorkflowRuntimeData>()(
   Type.Object({
     id: Type.String(),
-    endUserId: Type.Union([
-      Type.String(),
-      Type.Null()
-    ]),
-    businessId: Type.Union([
-      Type.String(),
-      Type.Null()
-    ]),
-    assigneeId: Type.Union([
-      Type.String(),
-      Type.Null()
-    ]),
+    endUserId: TypeNullable(Type.String()),
+    businessId: TypeNullable(Type.String()),
+    assigneeId: TypeNullable(Type.String()),
     workflowDefinitionId: Type.String(),
     workflowDefinitionVersion: Type.Number(),
     context: Type.Any(),
     config: Type.Any(),
-    state: Type.Union([
-      Type.String(),
-      Type.Null()
-    ]),
+    state: TypeNullable(Type.String()),
     status: WorkflowRuntimeDataStatusSchema,
     createdAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
     updatedAt: Type.Unsafe<Date>({ type: "string", format: "date-time" }),
     createdBy: Type.String({ default: "SYSTEM" }),
-    resolvedAt: Type.Union([
+    resolvedAt: TypeNullable(
       Type.Unsafe<Date>({ type: "string", format: "date-time" }),
-      Type.Null()
-    ]),
-    assignedAt: Type.Union([
+    ),
+    assignedAt: TypeNullable(
       Type.Unsafe<Date>({ type: "string", format: "date-time" }),
-      Type.Null()
-    ])
+    )
   })
 );
 
 export const WorkflowDefinitionSchema = Type.Object({
   id: Type.String(),
   reviewMachineId: Type.Optional(
-    Type.Union([
-      Type.String(),
-      Type.Null()
-    ])
+    TypeNullable(Type.String())
   ),
   name: Type.String(),
   version: Type.Number({ default: 1 }),

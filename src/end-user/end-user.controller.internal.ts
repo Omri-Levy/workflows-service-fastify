@@ -5,9 +5,9 @@ import { EndUserFindManyArgs } from "@/end-user/dtos/end-user-find-many-args";
 import { InputJsonValue } from "@/types";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { isRecordNotFoundError } from "@/db/db.util";
-import * as errors from "@/errors";
 import { Type } from "@sinclair/typebox";
 import { EndUserSchema } from "@/common/schemas";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export const endUserControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
   const endUserRepository = new EndUserRepository(
@@ -23,6 +23,10 @@ export const endUserControllerInternal: FastifyPluginAsyncTypebox = async (fasti
         querystring: EndUserFindManyArgs,
         response: {
           200: Type.Array(Type.Omit(EndUserSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "businesses"])),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           401: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -53,6 +57,10 @@ export const endUserControllerInternal: FastifyPluginAsyncTypebox = async (fasti
       }),
       response: {
         200: Type.Omit(EndUserSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "businesses"]),
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
         404: Type.Object({
           status: Type.String(),
           message: Type.String()
@@ -75,7 +83,7 @@ export const endUserControllerInternal: FastifyPluginAsyncTypebox = async (fasti
       return reply.send(endUser);
     } catch (err) {
       if (isRecordNotFoundError(err)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+        throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
       }
 
       throw err;

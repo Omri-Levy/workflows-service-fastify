@@ -1,4 +1,5 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { Request } from 'express';
 import { env } from '@/env';
 
@@ -11,7 +12,7 @@ export class KeyAuthGuard implements CanActivate {
     const apiKey = authHeader.split(' ')[1];
 
     if (apiKey !== env.API_KEY) {
-      throw new UnauthorizedException('Invalid API key');
+      throw new UnauthorizedError('Invalid API key');
     }
 
     return true;

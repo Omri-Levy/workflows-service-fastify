@@ -16,8 +16,12 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
   beforeAll(async () => {
     app = await build();
   });
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
 
   describe("GET /", () => {
@@ -55,13 +59,21 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
       await filterService.create({
         data: {
           name: "test1",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true,
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -69,13 +81,21 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
       await filterService.create({
         data: {
           name: "test2",
-          entity: "individual",
+          entity: "individuals",
           query: {
             select: {
-              lastName: true,
+              endUser: {
+                select: {
+                  lastName: true,
+                }
+              }
             },
             where: {
-              firstName: "firstName2"
+              endUser: {
+                is: {
+                  firstName: "firstName2"
+                }
+              }
             }
           }
         }
@@ -91,32 +111,54 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
       // Assert
       expect(res.statusCode).toBe(200);
       expect(json).toEqual([
-        expect.objectContaining({
+       {
           id: expect.any(String),
           name: "test1",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true,
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
-          }
-        }),
-        expect.objectContaining({
+          },
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+          createdBy: "SYSTEM",
+        },
+      {
           id: expect.any(String),
           name: "test2",
-          entity: "individual",
+          entity: "individuals",
           query: {
             select: {
-              lastName: true,
+              endUser: {
+                select: {
+                  lastName: true,
+                }
+              }
             },
             where: {
-              firstName: "firstName2"
+              endUser: {
+                is: {
+                  firstName: "firstName2"
+                }
+              }
             }
-          }
-        }),
+          },
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+          createdBy: "SYSTEM",
+        },
       ]);
     });
   });
@@ -153,13 +195,21 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
       const filter = await filterService.create({
         data: {
           name: "test3",
-          entity: "business",
+          entity: "businesses",
           query: {
             select: {
-              firstName: true,
+              business: {
+                select: {
+                  companyName: true,
+                }
+              }
             },
             where: {
-              lastName: "lastName"
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
             }
           }
         }
@@ -177,13 +227,21 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
       expect(json).toMatchObject({
         id: expect.any(String),
         name: "test3",
-        entity: "business",
+        entity: "businesses",
         query: {
           select: {
-            firstName: true,
+            business: {
+              select: {
+                companyName: true,
+              }
+            }
           },
           where: {
-            lastName: "lastName"
+            business: {
+              is: {
+                registrationNumber: "registrationNumber"
+              }
+            }
           }
         }
       });

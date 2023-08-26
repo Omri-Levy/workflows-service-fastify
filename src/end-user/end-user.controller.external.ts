@@ -11,11 +11,11 @@ import { FileService } from "@/providers/file/file.service";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { faker } from "@faker-js/faker";
 import { isRecordNotFoundError } from "@/db/db.util";
-import * as errors from "@/errors";
 import { makeFullWorkflow } from "@/workflow/utils/make-full-workflow";
 import { Type } from "@sinclair/typebox";
 import { EndUserFindManyArgs } from "@/end-user/dtos/end-user-find-many-args";
 import { EndUserSchema, WorkflowDefinitionSchema, WorkflowRuntimeDataSchema } from "@/common/schemas";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
@@ -45,11 +45,13 @@ export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fasti
         body: Type.Object({
           firstName: Type.String(),
           lastName: Type.String(),
+        }, {
+          additionalProperties: false
         }),
         response: {
           201: Type.Pick(EndUserSchema, ["id", "firstName", "lastName", "avatarUrl"]),
           400: Type.Object({
-            status: Type.Optional(Type.String()),
+            status: Type.String(),
             message: Type.String()
           }),
           401: Type.Object({
@@ -96,6 +98,10 @@ export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fasti
         querystring: EndUserFindManyArgs,
         response: {
           200: Type.Array(Type.Omit(EndUserSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "businesses"])),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           401: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -124,6 +130,10 @@ export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fasti
         }),
         response: {
           200: Type.Omit(EndUserSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "businesses"]),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()
@@ -148,7 +158,7 @@ export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fasti
         return reply.send(endUser);
       } catch (err) {
         if (isRecordNotFoundError(err)) {
-          throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params.id)}`);
+          throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params.id)}`);
         }
 
         throw err;
@@ -169,6 +179,10 @@ export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fasti
               workflowRuntimeData: Type.Omit(WorkflowRuntimeDataSchema, ["workflowDefinition"])
             })
           ),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
           404: Type.Object({
             status: Type.String(),
             message: Type.String()

@@ -18,8 +18,12 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
   beforeAll(async () => {
     app = await build();
   });
-  beforeEach(cleanupDatabase);
-  afterEach(tearDownDatabase);
+  beforeEach(async () => {
+    await cleanupDatabase(db);
+  });
+  afterAll(async () => {
+    await tearDownDatabase(db);
+  });
 
 
   describe("GET /", () => {

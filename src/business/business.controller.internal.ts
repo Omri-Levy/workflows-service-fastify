@@ -4,10 +4,10 @@ import { BusinessFindManyArgs } from "@/business/dtos/business-find-many-args";
 import { InputJsonValue } from "@/types";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { isRecordNotFoundError } from "@/db/db.util";
-import * as errors from "@/errors";
 import { BusinessService } from "@/business/business.service";
 import { BusinessRepository } from "@/business/business.repository";
 import { BusinessSchema } from "@/common/schemas";
+import { NotFoundError } from "@/common/errors/not-found-error";
 
 export const businessControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
   const businessRepository = new BusinessRepository(
@@ -23,6 +23,10 @@ export const businessControllerInternal: FastifyPluginAsyncTypebox = async (fast
       querystring: BusinessFindManyArgs,
       response: {
         200: Type.Array(Type.Omit(BusinessSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "endUsers"])),
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
         401: Type.Object({
           status: Type.String(),
           message: Type.String()
@@ -55,6 +59,10 @@ export const businessControllerInternal: FastifyPluginAsyncTypebox = async (fast
       }),
       response: {
         200: Type.Omit(BusinessSchema, ["endUsersOnBusinesses", "workflowRuntimeData", "endUsers"]),
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
         404: Type.Object({
           status: Type.String(),
           message: Type.String()
@@ -77,7 +85,7 @@ export const businessControllerInternal: FastifyPluginAsyncTypebox = async (fast
       return reply.send(business);
     } catch (err) {
       if (isRecordNotFoundError(err)) {
-        throw new errors.NotFoundException(`No resource was found for ${JSON.stringify(req.params?.id)}`);
+        throw new NotFoundError(`No resource was found for ${JSON.stringify(req.params?.id)}`);
       }
 
       throw err;

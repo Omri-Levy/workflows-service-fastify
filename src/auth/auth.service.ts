@@ -1,4 +1,4 @@
-import { UnauthorizedException } from "@nestjs/common";
+import { UnauthorizedError } from '@/common/errors/unauthorized-error';
 import { UserService } from "../user/user.service";
 import { LoginDto } from "./dtos/login";
 import { PasswordService } from "./password/password.service";
@@ -29,7 +29,7 @@ export class AuthService {
     const user = await this.validateUser(credentials.email, credentials.password);
 
     if (!user) {
-      throw new UnauthorizedException("The passed credentials are incorrect");
+      throw new UnauthorizedError("The passed credentials are incorrect");
     }
 
     const accessToken = await this.tokenService.createToken({
