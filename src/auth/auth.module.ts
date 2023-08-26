@@ -9,7 +9,7 @@ import { TokenService } from './token/token.service';
 // eslint-disable-next-line import/no-cycle
 import { UserModule } from '../user/user.module';
 import { LocalStrategy } from '@/auth/local/local.strategy';
-import { SessionSerializer } from '@/auth/session-serializer';
+import { SessionSerializer } from '@/auth/passport-session-serializer-plugin';
 import { UserService } from '@/user/user.service';
 import { UserRepository } from '@/user/user.repository';
 import { PassportModule } from '@nestjs/passport';

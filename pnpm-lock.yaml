@@ -29,6 +29,9 @@ dependencies:
   '@fastify/helmet':
     specifier: ^11.0.0
     version: 11.0.0
+  '@fastify/passport':
+    specifier: ^2.3.0
+    version: 2.3.0
   '@fastify/request-context':
     specifier: ^5.0.0
     version: 5.0.0
@@ -158,9 +161,6 @@ dependencies:
   nestjs-prisma:
     specifier: 0.20.0
     version: 0.20.0(@nestjs/common@9.3.12)(@prisma/client@4.13.0)(prisma@4.13.0)
-  passport:
-    specifier: 0.6.0
-    version: 0.6.0
   passport-http:
     specifier: 0.3.0
     version: 0.3.0
@@ -2292,11 +2292,24 @@ packages:
       fast-json-stringify: 5.8.0
     dev: false
 
+  /@fastify/flash@5.1.0:
+    resolution: {integrity: sha512-8/MwOWkky0RsSgSVRcpoY8Q+lGj+vx/QF60E0Opp+92KtLFWldr6eWUL+gpGJNmQiodsKCr0osjKIjySuUuM/g==}
+    dependencies:
+      fastify-plugin: 4.5.1
+    dev: false
+
   /@fastify/helmet@11.0.0:
     resolution: {integrity: sha512-YSFhJFR4Pk2azmTkX54f0Z/O7h5j4ruCQUlagf/Rw1P45u5/2u+F+I83DRyIKryM6prXl++X2yY0Ib0RXAlZ7Q==}
     dependencies:
       fastify-plugin: 4.5.1
       helmet: 7.0.0
+    dev: false
+
+  /@fastify/passport@2.3.0:
+    resolution: {integrity: sha512-OVTUXyAm7Tx194RJiJrzSvM8m5O8TR0CIc9ewKDZWjQcFs+MNiVURdjpIm28l7oY2o19TV9XANutfSH/ngEd+A==}
+    dependencies:
+      '@fastify/flash': 5.1.0
+      fastify-plugin: 4.5.1
     dev: false
 
   /@fastify/request-context@5.0.0:

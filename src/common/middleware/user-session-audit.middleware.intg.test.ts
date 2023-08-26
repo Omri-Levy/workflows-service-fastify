@@ -7,10 +7,8 @@ import { User } from '@prisma/client';
 import { Request, Response } from 'express';
 import dayjs from 'dayjs';
 import { commonTestingModules } from '@/test/helpers/nest-app-helper';
-import { Injectable } from '@nestjs/common';
 import { PasswordService } from '@/auth/password/password.service';
 
-@Injectable()
 class FakePasswordService {
   async compare(password: string, encrypted: string): Promise<boolean> {
     return Promise.resolve(true);

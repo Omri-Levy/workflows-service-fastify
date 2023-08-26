@@ -16,6 +16,7 @@ import { FileRepository } from "@/storage/storage.repository";
 import { StorageService } from "@/storage/storage.service";
 import { FileService } from "@/providers/file/file.service";
 import {
+  TypeNullable,
   WorkflowDefinitionSchema,
   WorkflowRuntimeDataSchema,
   WorkflowRuntimeDataStatusSchema
@@ -25,7 +26,6 @@ import { Type } from "@sinclair/typebox";
 import { FilterRepository } from "@/filter/filter.repository";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { ListWorkflowRuntimeDataWithRelationsReturnType } from "@/workflow/types";
-import { TypeNullable } from "@/common/validation";
 import { WorkflowDefinitionCreateSchema } from "@/workflow/dtos/workflow-definition-create";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 import { NotFoundError } from "@/common/errors/not-found-error";

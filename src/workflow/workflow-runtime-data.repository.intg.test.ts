@@ -13,7 +13,7 @@ import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.rep
 import { ArrayMergeOption, WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
 import { WorkflowService } from "@/workflow/workflow.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { db, PrismaService } from "@/db/client";
+import { db, } from "@/db/client";
 
 describe('#Workflow Runtime Repository Integration Tests', () => {
   let workflowRuntimeRepository: WorkflowRuntimeDataRepository;
@@ -39,7 +39,6 @@ describe('#Workflow Runtime Repository Integration Tests', () => {
       WorkflowRuntimeDataRepository,
       WorkflowService,
       EventEmitter2,
-      PrismaService,
     ];
 
     workflowRuntimeRepository = (await fetchServiceFromModule(

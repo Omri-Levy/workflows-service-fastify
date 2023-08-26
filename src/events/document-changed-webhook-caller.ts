@@ -5,7 +5,6 @@ import {
   WorkflowEventEmitterService,
   WorkflowEventRawData,
 } from '@/workflow/workflow-event-emitter.service';
-import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -15,7 +14,6 @@ import { WorkflowConfig } from '@/workflow/schemas/zod-schemas';
 import { getDocumentId } from '@ballerine/common';
 import { logger } from '@/lib/logging/logger';
 
-@Injectable()
 export class DocumentChangedWebhookCaller {
   #__axios: AxiosInstance;
 

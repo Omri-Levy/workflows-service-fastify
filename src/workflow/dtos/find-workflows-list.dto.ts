@@ -55,22 +55,6 @@ const validateOrderBy = (value: unknown, validColumns: readonly string[]) => {
 
   return value;
 };
-export const _FindWorkflowsListSchema = z.object({
-  filterId: z.string(),
-  orderBy: z.string(),
-  page: z.object({
-    number: z.coerce.number().int().positive(),
-    size: z.coerce.number().int().positive(),
-  }),
-  filter: z
-    .object({
-      assigneeId: z
-        .array(z.union([z.literal('').transform(() => null), z.string().nonempty()]))
-        .optional(),
-      status: z.array(z.nativeEnum(WorkflowRuntimeDataStatus)).optional(),
-    })
-    .optional(),
-});
 
 export const FindWorkflowsListSchema = Type.Object({
   filterId: Type.String(),

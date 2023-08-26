@@ -1,51 +1,113 @@
-import { db } from "@/db/client";
-import { AuthService } from "@/auth/auth.service";
-import { UserService } from "@/user/user.service";
-import { UserRepository } from "@/user/user.repository";
-import { PasswordService } from "@/auth/password/password.service";
-import { TokenService } from "@/auth/token/token.service";
-import { JwtService } from "@nestjs/jwt";
-import { plainToClass } from "class-transformer";
-import { LoginDto } from "@/auth/dtos/login";
-import util from "util";
+import { Type } from "@sinclair/typebox";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { TypeNullable, UserSchema } from "@/common/schemas";
+import fastifyPassport from "@fastify/passport";
 
 export const authControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
-  const passwordService = new PasswordService();
-  const userRepository = new UserRepository(
-    db,
-    passwordService
-  );
-  const userService = new UserService(
-    userRepository
-  );
-  const jwtService = new JwtService();
-  const tokenService = new TokenService(
-    jwtService
-  );
-  const authService = new AuthService(userService, passwordService, tokenService);
 
-  fastify.post("/login", async (req, reply) => {
-    const data = plainToClass(LoginDto, req.body);
-
-    return reply.send({ user: req.user });
-  });
-  fastify.post("/logout", async (req, reply) => {
-    // @ts-expect-error - TODO: fix type
-    const asyncLogout = util.promisify(req.logout.bind(req));
-
-    await asyncLogout();
-
-    await reply.clearCookie("session", { path: "/", httpOnly: true });
-    await reply.clearCookie("session.sig", { path: "/", httpOnly: true });
-
-    return reply.send({ user: undefined });
-  });
-  fastify.get("/session", async (req, reply) => {
+  fastify.post("/login", {
+    schema: {
+      description: "Log in a user",
+      tags: ["Authentication"],
+      body: Type.Object({
+        email: Type.String(),
+        password: Type.String(),
+        callbackUrl: Type.Optional(Type.String())
+      }, {
+        additionalProperties: false
+      }),
+      response: {
+        200: Type.Object({
+          user: Type.Pick(UserSchema, [
+            "id",
+            "firstName",
+            "lastName",
+            "email"
+          ])
+        }),
+        401: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
+        500: Type.Object({
+          status: Type.Optional(Type.String()),
+          code: Type.Optional(Type.Number()),
+          message: Type.String()
+        })
+      }
+    },
+    preValidation: fastifyPassport.authenticate("local")
+  }, async (req, reply) => {
 
     return reply.send({
       user: req?.user
     });
   });
+
+  fastify.post("/logout", {
+    schema: {
+      description: "Log out a user",
+      tags: ["Authentication"],
+      response: {
+        200: Type.Object({
+          user: Type.Null()
+        }),
+        400: Type.Object({
+          status: Type.String(),
+          message: Type.String()
+        }),
+        500: Type.Object({
+          status: Type.Optional(Type.String()),
+          code: Type.Optional(Type.Number()),
+          message: Type.String()
+        })
+      }
+    }
+  }, async (req, reply) => {
+
+    void req.logOut();
+
+    void reply.clearCookie("session", { path: "/", httpOnly: true });
+    void reply.clearCookie("session.sig", { path: "/", httpOnly: true });
+
+    return reply.send({ user: null });
+  });
+
+  fastify.get("/session",
+    {
+      schema: {
+        description: "Get the data of the authenticated user",
+        tags: ["Authentication"],
+        response: {
+          200: Type.Object({
+            user: TypeNullable(
+              Type.Pick(UserSchema, [
+                "id",
+                "firstName",
+                "lastName",
+                "email"
+              ]))
+          }),
+          400: Type.Object({
+            status: Type.String(),
+            message: Type.String()
+          }),
+          500: Type.Object({
+            status: Type.Optional(Type.String()),
+            code: Type.Optional(Type.Number()),
+            message: Type.String()
+          })
+        }
+      }
+    }, async (req, reply) => {
+
+      return reply.send({
+        user: req?.user ?? null
+      });
+    });
 
 };

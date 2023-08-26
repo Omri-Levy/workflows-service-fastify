@@ -1,7 +1,6 @@
-import { Type } from "@sinclair/typebox";
+import { TSchema, Type } from "@sinclair/typebox";
 import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
 import { WorkflowRuntimeData } from "@prisma/client";
-import { TypeNullable } from "@/common/validation";
 
 export const ApprovalStateSchema = Type.Union([
   Type.Literal("APPROVED"),
@@ -15,6 +14,22 @@ export const WorkflowRuntimeDataStatusSchema = Type.Union([
   Type.Literal("completed"),
   Type.Literal("failed")
 ]);
+
+export const createJsonValue = (id: string) => Type.Recursive((This) =>
+    Type.Union([
+      Type.String(),
+      Type.Number(),
+      Type.Boolean(),
+      Type.Null(),
+      Type.Array(This),
+      Type.Record(Type.String(), This)
+    ]),
+  { $id: id }
+);
+export const TypeNullable = <TSchemas extends Array<TSchema>>(...schemas: TSchemas) => Type.Union([...schemas, Type.Null()]);
+
+export const TypeNoNull = <T extends TSchema>(schema: T) =>
+  Type.Exclude(schema, Type.Null());
 
 export const BaseUserSchema = Type.Object({
   id: Type.String(),
@@ -281,3 +296,7 @@ export const FilterSchema = Type.Recursive((This) => Type.Object({
   parentFilterId: Type.Optional(Type.String()),
   parentFilter: Type.Optional(This)
 }));
+
+export const TypeObjectWithId = Type.Object({
+  id: Type.String()
+});

@@ -1,10 +1,9 @@
-import { logger } from '@/lib/logging/logger';
-import { UserService } from '@/user/user.service';
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { Request, Response } from 'express';
+import { logger } from "@/lib/logging/logger";
+import { UserService } from "@/user/user.service";
+import { NestMiddleware } from "@nestjs/common";
+import { User } from "@prisma/client";
+import { Request, Response } from "express";
 
-@Injectable()
 export class UserSessionAuditMiddleware implements NestMiddleware {
   private FIVE_MINUTES_IN_MS = 1000 * 60 * 5;
   UPDATE_INTERVAL = this.FIVE_MINUTES_IN_MS;

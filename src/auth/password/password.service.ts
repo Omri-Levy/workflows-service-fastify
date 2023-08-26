@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { compare, hash } from 'bcrypt';
-import { env } from '@/env';
+import { compare, hash } from "bcrypt";
+import { env } from "@/env";
 
 /** Salt or number of rounds to generate a salt */
 export type Salt = string | number;

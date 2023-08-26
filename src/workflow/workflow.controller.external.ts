@@ -12,6 +12,7 @@ import { FileRepository } from "@/storage/storage.repository";
 import { StorageService } from "@/storage/storage.service";
 import { FileService } from "@/providers/file/file.service";
 import {
+  TypeNoNull, TypeNullable,
   WorkflowDefinitionSchema,
   WorkflowRuntimeDataSchema,
   WorkflowRuntimeDataStatusSchema
@@ -20,7 +21,6 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
 import { SortOrderSchema } from "@/common/query-filters/sort-order";
-import { TypeNoNull, TypeNullable } from "@/common/validation";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 import { BadRequestError } from "@/common/errors/bad-request-error";
 

@@ -1,3 +1,5 @@
+import { User } from "@prisma/client";
+
 declare global {
   // eslint-disable-next-line no-var
   var __rootdir__: string;
@@ -6,14 +8,9 @@ declare global {
 
 declare module "fastify" {
 
-  interface FastifyRequest {
+  interface PassportUser extends Pick<User, "id" | "email" | "firstName" | "lastName"> {}
 
-    user: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-    };
+  interface FastifyRequest {
 
     id: string;
     startTime: number;

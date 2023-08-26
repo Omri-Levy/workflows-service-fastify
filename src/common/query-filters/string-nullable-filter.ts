@@ -1,6 +1,7 @@
 import { QueryMode } from './query-mode';
 import { Type } from '@sinclair/typebox';
-import { TypeNullable } from "@/common/validation";
+
+import { TypeNullable } from "@/common/schemas";
 
 export const StringNullableFilter = Type.Object({
   equals: Type.Optional(TypeNullable(Type.String())),
