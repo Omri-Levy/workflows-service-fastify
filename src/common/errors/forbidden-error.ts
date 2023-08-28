@@ -10,8 +10,6 @@ export class ForbiddenError extends CustomError {
     ),
   ) {
     super(message);
-
-    Object.setPrototypeOf(this, ForbiddenError.prototype);
   }
 
   serializeErrors() {

@@ -7,8 +7,6 @@ export class ZodValidationError extends CustomError {
 
   constructor(public error: ZodError) {
     super(`Validation error`);
-
-    Object.setPrototypeOf(this, ZodValidationError.prototype);
   }
 
   serializeErrors() {

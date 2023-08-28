@@ -12,7 +12,7 @@ import { BusinessRepository } from "@/business/business.repository";
 import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.repository";
 import { ArrayMergeOption, WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
 import { WorkflowService } from "@/workflow/workflow.service";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { EventEmitter } from "events";
 import { db, } from "@/db/client";
 
 describe('#Workflow Runtime Repository Integration Tests', () => {
@@ -38,7 +38,7 @@ describe('#Workflow Runtime Repository Integration Tests', () => {
       WorkflowDefinitionRepository,
       WorkflowRuntimeDataRepository,
       WorkflowService,
-      EventEmitter2,
+      EventEmitter,
     ];
 
     workflowRuntimeRepository = (await fetchServiceFromModule(

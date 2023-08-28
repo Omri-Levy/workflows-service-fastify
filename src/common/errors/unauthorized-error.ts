@@ -10,8 +10,6 @@ export class UnauthorizedError extends CustomError {
     ),
   ) {
     super(message);
-
-    Object.setPrototypeOf(this, UnauthorizedError.prototype);
   }
 
   serializeErrors() {

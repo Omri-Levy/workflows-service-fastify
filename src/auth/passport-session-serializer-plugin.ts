@@ -23,10 +23,7 @@ export const PassportSessionSerializerPlugin = FastifyPlugin(async () => {
 
   fastifyPassport.registerUserDeserializer(async (user: User): Promise<Omit<User, "password"> | null> => {
     try {
-      const userResult = await userService.getById(user.id);
-
-      // @ts-ignore
-      delete userResult.password;
+      const { password: _password, ...userResult } = await userService.getById(user.id);
 
       return userResult;
     } catch (err) {

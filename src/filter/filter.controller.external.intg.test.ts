@@ -11,6 +11,13 @@ import { FileRepository } from "@/storage/storage.repository";
 import { StorageService } from "@/storage/storage.service";
 import { FileService } from "@/providers/file/file.service";
 import { EndUserRepository } from "@/end-user/end-user.repository";
+import { WorkflowEventEmitterService } from "@/workflow/workflow-event-emitter.service";
+import EventEmitter from "events";
+import { HttpService } from "@/http/http.service";
+import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-caller";
+import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
+import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
+import { TWebhookConfig } from "@/events/types";
 
 describe("/api/v1/external/filters #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -417,13 +424,40 @@ describe("/api/v1/external/filters #api #integration #external", () => {
       const fileRepository = new FileRepository(db);
       const storageService = new StorageService(fileRepository);
       const fileService = new FileService();
+      const eventEmitter = new EventEmitter();
+      const workflowEventEmitter = new WorkflowEventEmitterService(eventEmitter);
+      const httpService = new HttpService();
+      const config = {
+        NODE_ENV: 'test',
+        WEBHOOK_URL: 'http://webhook.test',
+        WEBHOOK_SECRET: 'test'
+      } satisfies TWebhookConfig
+      const documentChangedWebhookCaller = new DocumentChangedWebhookCaller(
+        httpService,
+        workflowEventEmitter,
+        config,
+      );
+      const workflowStateChangedWebhookCaller = new WorkflowStateChangedWebhookCaller(
+        httpService,
+        workflowEventEmitter,
+        config,
+      );
+      const workflowCompletedWebhookCaller = new WorkflowCompletedWebhookCaller(
+        httpService,
+        workflowEventEmitter,
+        config,
+      );
       const workflowService = new WorkflowService(
         workflowDefinitionRepository,
         workflowRuntimeDataRepository,
         endUserRepository,
         businessRepository,
         storageService,
-        fileService
+        fileService,
+        workflowEventEmitter,
+        documentChangedWebhookCaller,
+        workflowStateChangedWebhookCaller,
+        workflowCompletedWebhookCaller
       );
 
       // Assert

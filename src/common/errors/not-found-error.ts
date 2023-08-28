@@ -10,8 +10,6 @@ export class NotFoundError extends CustomError {
     ),
   ) {
     super(message);
-
-    Object.setPrototypeOf(this, NotFoundError.prototype);
   }
 
   serializeErrors() {

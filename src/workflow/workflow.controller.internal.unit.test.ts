@@ -94,7 +94,7 @@ describe('WorkflowControllerInternal', () => {
         this.emitted.push({ status, data });
       },
     };
-    const service = new WorkflowService(
+    const workflowService = new WorkflowService(
       workflowDefinitionRepo as any,
       workflowRuntimeDataRepo,
       endUserRepo,
@@ -106,7 +106,7 @@ describe('WorkflowControllerInternal', () => {
     const filterService = {} as any;
     const rolesBuilder = {} as any;
 
-    controller = new WorkflowControllerInternal(service, filterService, rolesBuilder);
+    controller = new WorkflowControllerInternal(workflowService, filterService, rolesBuilder);
   });
 
   describe('.event', () => {

@@ -63,6 +63,10 @@ import { logger } from "@/lib/logging/logger";
 import { ApprovalState } from "@/common/enums";
 import { Static } from "@sinclair/typebox";
 import { NotFoundError } from "@/common/errors/not-found-error";
+import { WorkflowEventEmitterService } from "@/workflow/workflow-event-emitter.service";
+import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-caller";
+import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
+import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
 
 type TEntityId = string;
 
@@ -124,11 +128,12 @@ export class WorkflowService {
     protected readonly endUserRepository: EndUserRepository,
     protected readonly businessRepository: BusinessRepository,
     protected readonly storageService: StorageService,
-    protected readonly fileService: FileService
-    // protected readonly workflowEventEmitter: WorkflowEventEmitterService,
-  ) {
-
-  }
+    protected readonly fileService: FileService,
+    protected readonly workflowEventEmitter: WorkflowEventEmitterService,
+    protected readonly documentChangedWebhookCaller: DocumentChangedWebhookCaller,
+    protected readonly workflowStateChangedWebhookCaller: WorkflowStateChangedWebhookCaller,
+    protected readonly workflowCompletedWebhookCaller: WorkflowCompletedWebhookCaller,
+  ) {}
 
   async createWorkflowDefinition(data: Static<typeof WorkflowDefinitionCreateSchema>) {
     const select = {
@@ -538,6 +543,13 @@ export class WorkflowService {
 
     if (isResolved) {
       logger.info("Workflow resolved", { id: workflowRuntimeId });
+
+      this.workflowEventEmitter.emit('workflow.completed', {
+        runtimeData,
+        state: currentState ?? runtimeData.state,
+        entityId: runtimeData.businessId || runtimeData.endUserId,
+        correlationId,
+      });
     }
 
     const documentToRevise = data.context?.documents?.find(
@@ -603,13 +615,13 @@ export class WorkflowService {
     }
 
     if (contextHasChanged) {
-      // this.workflowEventEmitter.emit('workflow.context.changed', {
-      //   oldRuntimeData: runtimeData,
-      //   updatedRuntimeData: updatedResult,
-      //   state: currentState as string,
-      //   entityId: (runtimeData.businessId || runtimeData.endUserId) as string,
-      //   correlationId: correlationId,
-      // });
+      this.workflowEventEmitter.emit('workflow.context.changed', {
+        oldRuntimeData: runtimeData,
+        updatedRuntimeData: updatedResult,
+        state: currentState as string,
+        entityId: (runtimeData.businessId || runtimeData.endUserId) as string,
+        correlationId: correlationId,
+      });
     }
 
     // TODO: Move to a separate method

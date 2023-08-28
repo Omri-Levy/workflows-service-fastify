@@ -33,7 +33,7 @@ import {
   PassportSessionSerializerPlugin
 } from "@/auth/passport-session-serializer-plugin";
 import { PassportLocalStrategy } from "@/auth/passport-local-strategy";
-import { authPreHandler } from "@/auth/auth-pre-handler";
+import { authPreHandler } from "@/auth/auth.pre-handler";
 
 // This line is used to improve Sentry's stack traces
 // https://docs.sentry.io/platforms/node/typescript/#changing-events-frames
@@ -126,7 +126,15 @@ export const build = async () => {
 
   const internalRouter: FastifyPluginAsync = async (fastify) => {
 
-    fastify.addHook('preHandler', authPreHandler);
+    fastify.addHook(
+      "preHandler",
+      authPreHandler({
+        unprotectedRoutes: [
+          "/api/v1/internal/auth/login",
+          "/api/v1/internal/auth/logout",
+          "/api/v1/internal/auth/session",
+        ]
+      }));
 
     await fastify.register(filterControllerInternal, { prefix: "/filters" });
     await fastify.register(storageControllerInternal, { prefix: "/storage" });

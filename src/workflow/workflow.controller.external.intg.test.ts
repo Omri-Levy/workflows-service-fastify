@@ -1,3 +1,5 @@
+import packageJson from "../../package.json";
+import nock from "nock";
 import { build } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
 import { WorkflowService } from "@/workflow/workflow.service";
@@ -10,6 +12,15 @@ import { FileRepository } from "@/storage/storage.repository";
 import { FileService } from "@/providers/file/file.service";
 import { StorageService } from "@/storage/storage.service";
 import { EndUserService } from "@/end-user/end-user.service";
+import { WorkflowEventEmitterService } from "@/workflow/workflow-event-emitter.service";
+import EventEmitter from "events";
+import { HttpService } from "@/http/http.service";
+import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-caller";
+import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
+import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
+import { TWebhookConfig } from "@/events/types";
+import { InjectOptions } from "fastify";
+import { randomUUID } from "node:crypto";
 
 describe("/api/v1/external/workflows #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -23,13 +34,40 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   const fileRepository = new FileRepository(db);
   const fileService = new FileService();
   const storageService = new StorageService(fileRepository);
+  const eventEmitter = new EventEmitter();
+  const workflowEventEmitter = new WorkflowEventEmitterService(eventEmitter);
+  const httpService = new HttpService();
+  const config = {
+    NODE_ENV: "test",
+    WEBHOOK_URL: "http://webhook.test",
+    WEBHOOK_SECRET: "test"
+  } satisfies TWebhookConfig;
+  const documentChangedWebhookCaller = new DocumentChangedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config
+  );
+  const workflowStateChangedWebhookCaller = new WorkflowStateChangedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config
+  );
+  const workflowCompletedWebhookCaller = new WorkflowCompletedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config
+  );
   const workflowService = new WorkflowService(
     workflowDefinitionRepository,
     workflowRuntimeDataRepository,
     endUserRepository,
     businessRepository,
     storageService,
-    fileService
+    fileService,
+    workflowEventEmitter,
+    documentChangedWebhookCaller,
+    workflowStateChangedWebhookCaller,
+    workflowCompletedWebhookCaller
   );
 
   beforeAll(async () => {
@@ -411,6 +449,237 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
         // Assert
         expect(res.statusCode).toEqual(400);
+      });
+    });
+
+    describe("when fields are valid", () => {
+      it("should update the workflow", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {}
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          config: {},
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: []
+          }
+        });
+        const injectOptions = {
+          method: "PATCH",
+          url: `/api/v1/external/workflows/${workflow?.[0].workflowRuntimeData?.id}`,
+          body: {
+            state: "test",
+            context: {
+              entity: {
+                firstName: "Bob",
+                lastName: "Doe"
+              }
+            }
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+        const json = await res.json();
+
+        // Assert
+        expect(res.statusCode).toEqual(200);
+        expect(json).toMatchObject({
+          state: "test",
+          context: expect.objectContaining({
+            entity: expect.objectContaining({
+              firstName: "Bob",
+              lastName: "Doe"
+            })
+          })
+        });
+      });
+
+      it("should send a webhook for `workflow.context.document.changed` event", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {}
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          config: {
+            subscriptions: [
+              {
+                type: "webhook",
+                url: config.WEBHOOK_URL,
+                events: ["workflow.context.document.changed"]
+              }
+            ]
+          },
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: [
+              {
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          }
+        });
+        const id = randomUUID();
+        const nockResponse = {
+          id: workflow?.[0].workflowRuntimeData?.id,
+          eventName: "workflow.context.document.changed",
+          apiVersion: packageJson.version,
+          timestamp: new Date().toISOString(),
+          workflowCreatedAt: workflow?.[0]?.workflowRuntimeData?.createdAt,
+          workflowResolvedAt: workflow?.[0]?.workflowRuntimeData?.resolvedAt,
+          workflowDefinitionId: workflow?.[0]?.workflowRuntimeData?.workflowDefinitionId,
+          workflowRuntimeId: workflow?.[0]?.workflowRuntimeData?.id,
+          ballerineEntityId: endUser.id,
+          correlationId: workflow?.[0]?.workflowRuntimeData?.businessId || workflow?.[0]?.workflowRuntimeData?.endUserId,
+          environment: config.NODE_ENV,
+          data: {
+            entity: {
+              firstName: "Bob",
+              lastName: "Doe"
+            },
+            documents: [
+              {
+                id,
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                decision: {
+                  status: "approved"
+                },
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          }
+        };
+        const injectOptions = {
+          method: "PATCH",
+          url: `/api/v1/external/workflows/${workflow?.[0].workflowRuntimeData?.id}`,
+          body: {
+            state: "test",
+            context: {
+              entity: {
+                firstName: "Bob",
+                lastName: "Doe"
+              },
+              documents: [
+                {
+                  id,
+                  type: "water_bill",
+                  pages: [
+                    {
+                      uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                      type: "png",
+                      metadata: {
+                        side: "front",
+                        pageNumber: "1"
+                      },
+                      provider: "http",
+                      ballerineFileId: "cllvb8e380006ijin3ml4r249"
+                    }
+                  ],
+                  issuer: {
+                    country: "GH"
+                  },
+                  version: 1,
+                  category: "proof_of_address",
+                  decision: {
+                    status: "approved"
+                  },
+                  properties: {
+                    docNumber: "1234",
+                    userAddress: "Turkey, buhgdawe"
+                  },
+                  issuingVersion: 1
+                }
+              ]
+            }
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const nockWebhook = nock(config.WEBHOOK_URL)
+          .post("/")
+          .reply(200, nockResponse);
+        await app.inject(injectOptions);
+
+        // Assert
+        expect(nockWebhook.isDone()).toBe(true);
+
+        nock.cleanAll();
       });
     });
 
@@ -1193,7 +1462,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
         // Assert
         expect(res.statusCode).toEqual(200);
         expect(json).toEqual({
-          context: workflow?.[0]?.workflowRuntimeData?.context,
+          context: workflow?.[0]?.workflowRuntimeData?.context
         });
       });
     });

@@ -23,6 +23,14 @@ import { typeboxBuilder } from "@/common/utils/typebox-builder/typebox-builder";
 import { SortOrderSchema } from "@/common/query-filters/sort-order";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 import { BadRequestError } from "@/common/errors/bad-request-error";
+import { WorkflowEventEmitterService } from "@/workflow/workflow-event-emitter.service";
+import EventEmitter from "events";
+import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-caller";
+import { HttpService } from "@/http/http.service";
+import { env } from "@/env";
+import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
+import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
+import { TWebhookConfig } from "@/events/types";
 
 export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
@@ -35,13 +43,40 @@ export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fas
   const fileRepository = new FileRepository(db);
   const storageService = new StorageService(fileRepository);
   const fileService = new FileService();
+  const eventEmitter = new EventEmitter();
+  const workflowEventEmitter = new WorkflowEventEmitterService(eventEmitter);
+  const httpService = new HttpService();
+  const config = {
+    NODE_ENV: env.NODE_ENV,
+    WEBHOOK_URL: env.WEBHOOK_URL,
+    WEBHOOK_SECRET: env.WEBHOOK_SECRET
+  } satisfies TWebhookConfig
+  const documentChangedWebhookCaller = new DocumentChangedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config,
+  );
+  const workflowStateChangedWebhookCaller = new WorkflowStateChangedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config,
+  );
+  const workflowCompletedWebhookCaller = new WorkflowCompletedWebhookCaller(
+    httpService,
+    workflowEventEmitter,
+    config,
+  );
   const workflowService = new WorkflowService(
     workflowDefinitionRepository,
     workflowRuntimeDataRepository,
     endUserRepository,
     businessRepository,
     storageService,
-    fileService
+    fileService,
+    workflowEventEmitter,
+    documentChangedWebhookCaller,
+    workflowStateChangedWebhookCaller,
+    workflowCompletedWebhookCaller
   );
 
   // listWorkflowRuntimeData
