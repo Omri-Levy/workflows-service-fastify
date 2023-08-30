@@ -1,5 +1,4 @@
 import packageJson from "../../package.json";
-import nock from "nock";
 import { build } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
 import { WorkflowService } from "@/workflow/workflow.service";
@@ -21,6 +20,7 @@ import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webh
 import { TWebhookConfig } from "@/events/types";
 import { InjectOptions } from "fastify";
 import { randomUUID } from "node:crypto";
+import nock from "nock";
 
 describe("/api/v1/external/workflows #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -83,13 +83,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("GET /", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -98,13 +101,15 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when no workflows exist", () => {
       it("should return 0 pages, 0 total, and an empty results array", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(200);
@@ -120,6 +125,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when workflows exist", () => {
       it("should return an array of workflows", async () => {
+
         // Arrange
         const endUser = await endUserService.create({
           data: {
@@ -127,6 +133,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
+        const injectOptions = {
+          method: "GET",
+          url: "/api/v1/external/workflows"
+        } satisfies InjectOptions;
 
         // Act
         const workflowDefinition = await workflowService.createWorkflowDefinition({
@@ -168,10 +178,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-        const res = await app.inject({
-          method: "GET",
-          url: "/api/v1/external/workflows"
-        });
+        const res = await app.inject(injectOptions);
         const json = await res.json();
 
         // Assert
@@ -238,13 +245,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("GET /workflow-definition/:id", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/workflow-definition/1"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -253,13 +263,15 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow definition does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/workflow-definition/1"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -268,18 +280,20 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow definition exists", () => {
       it("should return the workflow definition belonging to the id", async () => {
+
         // Arrange
         const workflow = await workflowService.createWorkflowDefinition({
           name: "test",
           definitionType: "statechart-json",
           definition: {}
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "GET",
           url: `/api/v1/external/workflows/workflow-definition/${workflow?.id}`
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
         const json = await res.json();
 
         // Assert
@@ -294,13 +308,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("GET /:id", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/1"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -309,13 +326,15 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/1"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -324,6 +343,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow exists", () => {
       it("should return the workflow belonging to the id", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -351,12 +371,13 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
           },
           config: {}
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "GET",
           url: `/api/v1/external/workflows/${workflow[0]?.workflowRuntimeData?.id}`
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
         const json = await res.json();
 
         // Assert
@@ -376,14 +397,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("PATCH /:id", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "PATCH",
           url: "/api/v1/external/workflows/1",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -392,14 +415,17 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "PATCH",
           url: `/api/v1/external/workflows/1`,
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -408,6 +434,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when fields are invalid", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -435,9 +462,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "PATCH",
           url: `/api/v1/external/workflows/${workflow?.[0].workflowRuntimeData?.id}`,
           body: {
@@ -445,7 +470,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             status: true,
             context: []
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -489,8 +517,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             state: "test",
             context: {
               entity: {
-                firstName: "Bob",
-                lastName: "Doe"
+                data: {
+                  firstName: "Bob",
+                  lastName: "Doe"
+                }
               }
             }
           }
@@ -506,8 +536,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
           state: "test",
           context: expect.objectContaining({
             entity: expect.objectContaining({
-              firstName: "Bob",
-              lastName: "Doe"
+              data: {
+                firstName: "Bob",
+                lastName: "Doe"
+              }
             })
           })
         });
@@ -576,22 +608,25 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
           }
         });
         const id = randomUUID();
+        const entityId = workflow?.[0]?.workflowRuntimeData?.businessId || workflow?.[0]?.workflowRuntimeData?.endUserId;
         const nockResponse = {
-          id: workflow?.[0].workflowRuntimeData?.id,
+          id: expect.any(String),
           eventName: "workflow.context.document.changed",
           apiVersion: packageJson.version,
-          timestamp: new Date().toISOString(),
-          workflowCreatedAt: workflow?.[0]?.workflowRuntimeData?.createdAt,
+          timestamp: expect.any(String),
+          workflowCreatedAt: workflow?.[0]?.workflowRuntimeData?.createdAt?.toISOString(),
           workflowResolvedAt: workflow?.[0]?.workflowRuntimeData?.resolvedAt,
           workflowDefinitionId: workflow?.[0]?.workflowRuntimeData?.workflowDefinitionId,
           workflowRuntimeId: workflow?.[0]?.workflowRuntimeData?.id,
-          ballerineEntityId: endUser.id,
-          correlationId: workflow?.[0]?.workflowRuntimeData?.businessId || workflow?.[0]?.workflowRuntimeData?.endUserId,
+          ballerineEntityId: entityId,
+          correlationId: endUser.id,
           environment: config.NODE_ENV,
           data: {
             entity: {
-              firstName: "Bob",
-              lastName: "Doe"
+              data: {
+                firstName: "Bob",
+                lastName: "Doe"
+              }
             },
             documents: [
               {
@@ -632,8 +667,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             state: "test",
             context: {
               entity: {
-                firstName: "Bob",
-                lastName: "Doe"
+                data: {
+                  firstName: "Bob",
+                  lastName: "Doe"
+                }
               },
               documents: [
                 {
@@ -669,18 +706,24 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             }
           }
         } satisfies InjectOptions;
+        let webhookResponse;
+        nock(config.WEBHOOK_URL)
+          .post("/", (body) => {
+            webhookResponse = body;
+
+            return true;
+          })
+          .reply(200);
 
         // Act
-        const nockWebhook = nock(config.WEBHOOK_URL)
-          .post("/")
-          .reply(200, nockResponse);
         await app.inject(injectOptions);
 
         // Assert
-        expect(nockWebhook.isDone()).toBe(true);
+        expect(webhookResponse).toMatchObject(nockResponse);
 
         nock.cleanAll();
       });
+
     });
 
     describe("when partially updating `jsonb`", () => {
@@ -693,14 +736,17 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("POST /intent", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/intent",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -709,6 +755,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when no workflows match the provided `intentName`", () => {
       it("should return 404", async () => {
+
         // Arrange
         const endUser = await endUserService.create({
           data: {
@@ -716,16 +763,17 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/intent",
           body: {
             entityId: endUser.id,
             intentName: "test"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -734,17 +782,20 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when no entity matches the provided `entityId`", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/intent",
           body: {
             entityId: "1",
             intentName: "kycSignup"
           }
-        });
+        } satisfies InjectOptions;
+
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -753,6 +804,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when a match is found for both `intentName` and `entityId`", () => {
       it("should create a workflow", async () => {
+
         // Arrange
         await workflowService.createWorkflowDefinition({
           // @ts-expect-error - we don't expect id to be passed in application code.
@@ -767,16 +819,17 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/intent",
           body: {
             entityId: endUser.id,
             intentName: "kycSignup"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(201);
@@ -786,15 +839,18 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
   describe("POST /run", () => {
     describe("when unauthenticated", () => {
-      it.skip("should return 401", async () => {
-        // Arrange
+      it("should return 401", async () => {
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -803,14 +859,17 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when missing required fields", () => {
       it("should return 400", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -819,10 +878,9 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when fields are invalid", () => {
       it("should return 400", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -830,7 +888,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             context: [],
             config: true
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -839,6 +900,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when no id is found on `entity`", () => {
       it("should fallback to `ballerineEntityId", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -851,9 +913,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -866,7 +926,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             },
             config: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
         const json = await res.json();
 
         // Assert
@@ -881,15 +944,14 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when both `id` and `ballerineEntityId` are not found on `entity`", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
           definitionType: "statechart-json",
           definition: {}
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -899,7 +961,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             },
             config: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -908,6 +973,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when a workflow doesn't exist", () => {
       it("should create a workflow", async () => {
+
         // Arrange
 
         // Act
@@ -928,9 +994,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -948,7 +1012,10 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             },
             config: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
         const json = await res.json();
         const workflowsAfter = await workflowService.listRuntimeData({});
 
@@ -978,9 +1045,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             lastName: "Doe"
           }
         });
-
-        // Act
-        const res1 = await app.inject({
+        const res1InjectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -998,9 +1063,8 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             },
             config: {}
           }
-        });
-        const json1 = await res1.json();
-        const res2 = await app.inject({
+        } satisfies InjectOptions;
+        const res2InjectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/run",
           body: {
@@ -1018,7 +1082,12 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             },
             config: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res1 = await app.inject(res1InjectOptions);
+        const res2 = await app.inject(res2InjectOptions);
+        const json1 = await res1.json();
         const json2 = await res2.json();
         const workflows = await workflowService.listRuntimeData({});
 
@@ -1037,14 +1106,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("POST /:id/event", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/1/event",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -1053,16 +1124,18 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/1/event",
           body: {
             name: "test"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -1071,6 +1144,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when missing required fields", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1091,13 +1165,14 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1106,6 +1181,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when fields are invalid", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1126,15 +1202,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
           body: {
             name: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1143,6 +1220,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe.skip("when `event` is not in the workflow definition", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1163,15 +1241,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
           body: {
             name: "test"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1180,6 +1259,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe.skip("when `event` is not in `nextEvents`", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1200,18 +1280,226 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
           body: {
             name: "approve"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
+
+      });
+    });
+
+    describe("when `event` is in `nextEvents`", () => {
+      it("should update the workflow's state", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {
+            initial: "idle",
+            states: {
+              idle: {
+                on: {
+                  approve: "approved"
+                }
+              },
+              approved: {
+                type: "final"
+              }
+            }
+          }
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: []
+          }
+        });
+        const injectOptions = {
+          method: "POST",
+          url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
+          body: {
+            name: "approve"
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+        const updatedWorkflow = await workflowService.getWorkflowRuntimeDataById(workflow?.[0]?.workflowRuntimeData?.id);
+
+        // Assert
+        expect(res.statusCode).toEqual(200);
+        expect(updatedWorkflow?.state).toEqual("approved");
+
+      });
+
+      it("should send a webhook for `workflow.completed` event", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {
+            initial: "idle",
+            states: {
+              idle: {
+                on: {
+                  approve: "approved"
+                }
+              },
+              approved: {
+                type: "final"
+              }
+            }
+          }
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: [
+              {
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          },
+          config: {
+            subscriptions: [
+              {
+                type: "webhook",
+                url: config.WEBHOOK_URL,
+                events: ["workflow.completed"]
+              }
+            ]
+          }
+        });
+
+        const nockResponse = {
+          id: expect.any(String),
+          eventName: "workflow.completed",
+          apiVersion: packageJson.version,
+          timestamp: expect.any(String),
+          workflowCreatedAt: workflow?.[0]?.workflowRuntimeData?.createdAt?.toISOString(),
+          workflowResolvedAt: workflow?.[0]?.workflowRuntimeData?.resolvedAt,
+          workflowDefinitionId: workflow?.[0]?.workflowRuntimeData?.workflowDefinitionId,
+          workflowRuntimeId: workflow?.[0]?.workflowRuntimeData?.id,
+          environment: config.NODE_ENV,
+          data: {
+            entity: {
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: [
+              {
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          }
+        };
+        let webhookResponse;
+        nock(config.WEBHOOK_URL)
+          .post("/", (body) => {
+            webhookResponse = body;
+            return true;
+          })
+          .reply(200);
+        const injectOptions = {
+          method: "POST",
+          url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/event`,
+          body: {
+            name: "approve"
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
+        // Assert
+        expect(res.statusCode).toEqual(200);
+        expect(webhookResponse).toMatchObject(nockResponse);
+
+        nock.cleanAll();
+
       });
     });
   });
@@ -1219,14 +1507,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
   describe("POST /:id/send-event", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/1/send-event",
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -1235,16 +1525,18 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "POST",
           url: "/api/v1/external/workflows/1/send-event",
           body: {
             name: "test"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -1253,6 +1545,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when missing required fields", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1273,13 +1566,14 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
           body: {}
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1288,6 +1582,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when fields are invalid", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1308,15 +1603,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
           body: {
             name: {}
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1325,6 +1621,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe.skip("when `event` is not in the workflow definition", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1345,15 +1642,16 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
           body: {
             name: "test"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
@@ -1362,6 +1660,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe.skip("when `event` is not in `nextEvents`", () => {
       it("should return 400", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1382,32 +1681,242 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "POST",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
           body: {
             name: "approve"
           }
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(400);
       });
     });
+
+    describe("when `event` is in `nextEvents`", () => {
+      it("should update the workflow's state", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {
+            initial: "idle",
+            states: {
+              idle: {
+                on: {
+                  approve: "approved"
+                }
+              },
+              approved: {
+                type: "final"
+              }
+            }
+          }
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: []
+          }
+        });
+        const injectOptions = {
+          method: "POST",
+          url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
+          body: {
+            name: "approve"
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+        const updatedWorkflow = await workflowService.getWorkflowRuntimeDataById(workflow?.[0]?.workflowRuntimeData?.id);
+
+        // Assert
+        expect(res.statusCode).toEqual(200);
+        expect(updatedWorkflow?.state).toEqual("approved");
+
+      });
+
+      it("should send a webhook for `workflow.completed` event", async () => {
+
+        // Arrange
+        const endUser = await endUserService.create({
+          data: {
+            firstName: "John",
+            lastName: "Doe"
+          }
+        });
+        const workflowDefinition = await workflowService.createWorkflowDefinition({
+          name: "test",
+          definitionType: "statechart-json",
+          definition: {
+            initial: "idle",
+            states: {
+              idle: {
+                on: {
+                  approve: "approved"
+                }
+              },
+              approved: {
+                type: "final"
+              }
+            }
+          }
+        });
+        const workflow = await workflowService.createOrUpdateWorkflowRuntime({
+          workflowDefinitionId: workflowDefinition.id,
+          context: {
+            entity: {
+              id: endUser.id,
+              type: "individual",
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: [
+              {
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          },
+          config: {
+            subscriptions: [
+              {
+                type: "webhook",
+                url: config.WEBHOOK_URL,
+                events: ["workflow.completed"]
+              }
+            ]
+          }
+        });
+        const nockResponse = {
+          id: expect.any(String),
+          eventName: "workflow.completed",
+          apiVersion: packageJson.version,
+          timestamp: expect.any(String),
+          workflowCreatedAt: workflow?.[0]?.workflowRuntimeData?.createdAt?.toISOString(),
+          workflowResolvedAt: workflow?.[0]?.workflowRuntimeData?.resolvedAt,
+          workflowDefinitionId: workflow?.[0]?.workflowRuntimeData?.workflowDefinitionId,
+          workflowRuntimeId: workflow?.[0]?.workflowRuntimeData?.id,
+          environment: config.NODE_ENV,
+          data: {
+            entity: {
+              data: {
+                firstName: "John",
+                lastName: "Doe"
+              }
+            },
+            documents: [
+              {
+                type: "water_bill",
+                pages: [
+                  {
+                    uri: "https://www.gstatic.com/webp/gallery3/1.sm.png",
+                    type: "png",
+                    metadata: {
+                      side: "front",
+                      pageNumber: "1"
+                    },
+                    provider: "http"
+                  }
+                ],
+                issuer: {
+                  country: "GH"
+                },
+                version: 1,
+                category: "proof_of_address",
+                properties: {
+                  docNumber: "1234",
+                  userAddress: "Turkey, buhgdawe"
+                },
+                issuingVersion: 1
+              }
+            ]
+          }
+        };
+        let webhookResponse;
+        nock(config.WEBHOOK_URL)
+          .post("/", (body) => {
+            webhookResponse = body;
+
+            return true;
+          })
+          .reply(200);
+        const injectOptions = {
+          method: "POST",
+          url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/send-event`,
+          body: {
+            name: "approve"
+          }
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
+
+        // Assert
+        expect(res.statusCode).toEqual(200);
+        expect(webhookResponse).toMatchObject(nockResponse);
+
+        nock.cleanAll();
+
+      });
+    });
+
   });
 
   describe("GET /:id/context", () => {
     describe("when unauthenticated", () => {
       it.skip("should return 401", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/1/context"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(401);
@@ -1416,13 +1925,15 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow does not exist", () => {
       it("should return 404", async () => {
-        // Arrange
 
-        // Act
-        const res = await app.inject({
+        // Arrange
+        const injectOptions = {
           method: "GET",
           url: "/api/v1/external/workflows/1/context"
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
 
         // Assert
         expect(res.statusCode).toEqual(404);
@@ -1431,6 +1942,7 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
 
     describe("when the workflow exists", () => {
       it("should return the context of the workflow belonging to the id", async () => {
+
         // Arrange
         const workflowDefinition = await workflowService.createWorkflowDefinition({
           name: "test",
@@ -1451,12 +1963,13 @@ describe("/api/v1/external/workflows #api #integration #external", () => {
             documents: []
           }
         });
-
-        // Act
-        const res = await app.inject({
+        const injectOptions = {
           method: "GET",
           url: `/api/v1/external/workflows/${workflow?.[0]?.workflowRuntimeData?.id}/context`
-        });
+        } satisfies InjectOptions;
+
+        // Act
+        const res = await app.inject(injectOptions);
         const json = await res.json();
 
         // Assert

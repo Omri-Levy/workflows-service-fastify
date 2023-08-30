@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { build } from "@/server";
 import { WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
 import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.repository";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/external/end-users #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -29,26 +30,31 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
   describe("GET /", () => {
 
     it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no end-users exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -57,6 +63,7 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
     });
 
     it("should return an array of end-users", async () => {
+
       // Arrange
       await endUserService.create({
         data: {
@@ -70,12 +77,13 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           lastName: "lastName2"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -97,32 +105,38 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
 
   describe("GET /:id", () => {
     it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 404 for non-existent end-user", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return an end-user", async () => {
+
       // Arrange
       const endUser = await endUserService.create({
         data: {
@@ -130,12 +144,13 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           lastName: "lastName"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/end-users/${endUser.id}`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -150,32 +165,37 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
 
   describe("GET /:endUserId/workflows", () => {
     it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users/1/workflows"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it.skip("should return 404 for non-existent end-user", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/end-users/1/workflows"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return an empty array if no workflows are connected to the end-user", async () => {
+
       // Arrange
       const endUser = await endUserService.create({
         data: {
@@ -183,12 +203,13 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           lastName: "lastName"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/end-users/${endUser.id}/workflows`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -197,17 +218,18 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
     });
 
     it("should return an array of workflows connected to the end-user", async () => {
+
       // Arrange
+      const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(
+        db
+      );
+      const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
       const endUser = await endUserService.create({
         data: {
           firstName: "test",
           lastName: "lastName"
         }
       });
-      const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(
-        db
-      );
-      const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
       const workflowDefinition = await workflowDefinitionRepository.create({
         data: {
           definitionType: "statechart-json",
@@ -231,12 +253,13 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/end-users/${endUser.id}/workflows`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -259,64 +282,71 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
   });
 
   describe("POST /", () => {
-
     it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 400 for missing required fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("should return 400 for invalid fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {
           firstName: false,
           lastName: {}
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("creates an end-user", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {
           firstName: "test",
           lastName: "lastName"
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
       const endUser = await endUserService.getById(json.id);
 
@@ -336,10 +366,9 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
 
     // Currently `correlationId` is not passed at `create`, and `update` is not exposed
     it.skip("should return 400 for duplicate `correlationId`", async () => {
-      // Arrange
 
-      // Act
-      await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {
@@ -347,8 +376,8 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           lastName: "lastName",
           correlationId: "test"
         }
-      });
-      const duplicateCorrelationIdRes = await app.inject({
+      } satisfies InjectOptions;
+      const duplicateCorrelationIdInjectOptions = {
         method: "POST",
         url: "/api/v1/external/end-users",
         body: {
@@ -356,7 +385,11 @@ describe("/api/v1/external/end-users #api #integration #external", () => {
           lastName: "lastName2",
           correlationId: "test"
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      await app.inject(injectOptions);
+      const duplicateCorrelationIdRes = await app.inject(duplicateCorrelationIdInjectOptions);
       const duplicateCorrelationIdJson = await duplicateCorrelationIdRes.json();
 
       // Assert

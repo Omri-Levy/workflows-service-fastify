@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { build } from "@/server";
 import { WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
 import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.repository";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/external/businesses #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -28,27 +29,32 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
 
   describe("GET /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no businesses exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -57,6 +63,7 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
     });
 
     it("should return an array of businesses", async () => {
+
       // Arrange
       await businessService.create({
         data: {
@@ -70,12 +77,13 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           registrationNumber: "9876543210"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -96,33 +104,40 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
   });
 
   describe("GET /:id", () => {
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 404 for non-existent business", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return a business", async () => {
+
       // Arrange
       const business = await businessService.create({
         data: {
@@ -130,12 +145,13 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           registrationNumber: "0123456789"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/businesses/${business.id}`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -149,33 +165,40 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
   });
 
   describe("GET /:businessId/workflows", () => {
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses/1/workflows"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it.skip("should return 404 for non-existent business", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/businesses/1/workflows"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return an empty array if no workflows are connected to the business", async () => {
+
       // Arrange
       const business = await businessService.create({
         data: {
@@ -183,12 +206,13 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           registrationNumber: "0123456789"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/businesses/${business.id}/workflows`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -197,6 +221,7 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
     });
 
     it("should return an array of workflows connected to the business", async () => {
+
       // Arrange
       const business = await businessService.create({
         data: {
@@ -231,12 +256,13 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/businesses/${business.id}/workflows`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -260,67 +286,75 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
 
   describe("POST /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 400 for missing required fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("should return 400 for invalid fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {
           companyName: false,
           registrationNumber: {}
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("creates a business", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {
           companyName: "test",
           registrationNumber: "0123456789"
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
-      console.log({
-        jsonId: json.id
-      });
       const business = await businessService.getById(json.id);
 
       // Assert
@@ -338,10 +372,9 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
 
     // Currently `correlationId` is not passed at `create`, and `update` is not exposed
     it.skip("should return 400 for duplicate `correlationId`", async () => {
-      // Arrange
 
-      // Act
-      await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {
@@ -349,8 +382,8 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           registrationNumber: "0123456789",
           correlationId: "test"
         }
-      });
-      const duplicateCorrelationIdRes = await app.inject({
+      } satisfies InjectOptions;
+      const duplicateCorrelationIdInjectOptions = {
         method: "POST",
         url: "/api/v1/external/businesses",
         body: {
@@ -358,7 +391,12 @@ describe("/api/v1/external/businesses #api #integration #external", () => {
           registrationNumber: "9876543210",
           correlationId: "test"
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      await app.inject(injectOptions);
+      const duplicateCorrelationIdRes = await app.inject(duplicateCorrelationIdInjectOptions);
+
       const duplicateCorrelationIdJson = await duplicateCorrelationIdRes.json();
 
       // Assert

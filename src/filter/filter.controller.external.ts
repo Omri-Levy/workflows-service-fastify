@@ -70,12 +70,13 @@ export const filterControllerExternal: FastifyPluginAsyncTypebox = async (fastif
 
       return reply.status(201).send(filter);
     } catch (err) {
-      if (err instanceof ZodError) {
-        throw new ZodValidationError(err);
-      }
 
       if (isUniqueConstraintError(err)) {
         throw new BadRequestError("Name already in use");
+      }
+
+      if (err instanceof ZodError) {
+        throw new ZodValidationError(err);
       }
 
       throw err;

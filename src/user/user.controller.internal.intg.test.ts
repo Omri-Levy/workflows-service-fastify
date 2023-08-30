@@ -4,6 +4,7 @@ import { UserRepository } from "@/user/user.repository";
 import { db } from "@/db/client";
 import { build } from "@/server";
 import { PasswordService } from "@/auth/password/password.service";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/internal/users #api #integration #internal", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -29,27 +30,32 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
 
   describe("GET /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/users"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no users exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/users"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -59,9 +65,13 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
 
     it("should return an array of users", async () => {
       // Arrange
+      const injectOptions = {
+        method: "GET",
+        url: "/api/v1/internal/users"
+      } satisfies InjectOptions;
       await userService.create({
         data: {
-          email: "test@test.com",
+          email: "login@login.com",
           firstName: "test",
           lastName: "lastName",
           password: "password",
@@ -79,10 +89,8 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
       });
 
       // Act
-      const res = await app.inject({
-        method: "GET",
-        url: "/api/v1/internal/users"
-      });
+      const res = await app.inject(injectOptions);
+
       const json = await res.json();
 
       // Assert
@@ -112,39 +120,44 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
 
   describe("POST /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/internal/users",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 400 for missing required fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/internal/users",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("should return 400 for invalid fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/internal/users",
         body: {
@@ -154,17 +167,20 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
           password: 123,
           roles: "admin"
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("creates an user", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/internal/users",
         body: {
@@ -174,7 +190,12 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
           password: "password",
           roles: ["admin"],
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
+
       const json = await res.json();
       const user = await userService.getById(json.id);
 
@@ -198,10 +219,9 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
   });
 
   it("should return 400 for unique constraints", async () => {
-    // Arrange
 
-    // Act
-    await app.inject({
+    // Arrange
+    const injectOptions = {
       method: "POST",
       url: "/api/v1/internal/users",
       body: {
@@ -212,8 +232,8 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
         roles: ["admin"],
         // phone: "123456789"
       }
-    });
-    const duplicateEmailRes = await app.inject({
+    } satisfies InjectOptions;
+    const duplicateEmailInjectOptions = {
       method: "POST",
       url: "/api/v1/internal/users",
       body: {
@@ -224,20 +244,25 @@ describe("/api/v1/internal/users #api #integration #internal", () => {
         roles: ["user"],
         // phone: "0123456789"
       }
-    });
+    } satisfies InjectOptions;
+    const duplicatePhoneInjectOptions = {
+      method: "POST",
+      url: "/api/v1/internal/users",
+      body: {
+        email: "test4@test4.com",
+        firstName: "test2",
+        lastName: "lastName2",
+        password: "password2",
+        roles: ["user"],
+        phone: "123456789"
+      }
+    } satisfies InjectOptions;
+
+    // Act
+    await app.inject(injectOptions);
+    const duplicateEmailRes = await app.inject(duplicateEmailInjectOptions);
     const duplicateEmailJson = await duplicateEmailRes.json();
-    // const duplicatePhoneRes = await app.inject({
-    //   method: "POST",
-    //   url: "/api/v1/internal/users",
-    //   body: {
-    //     email: "test4@test4.com",
-    //     firstName: "test2",
-    //     lastName: "lastName2",
-    //     password: "password2",
-    //     roles: ["user"],
-    //     phone: "123456789"
-    //   }
-    // });
+    // const duplicatePhoneRes = await app.inject(duplicatePhoneInjectOptions);
 
     // Assert
     expect(duplicateEmailRes.statusCode).toBe(400);

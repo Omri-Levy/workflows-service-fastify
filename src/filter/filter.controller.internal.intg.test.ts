@@ -3,6 +3,7 @@ import { FilterService } from "@/filter/filter.service";
 import { FilterRepository } from "@/filter/filter.repository";
 import { db } from "@/db/client";
 import { build } from "@/server";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/internal/filters #api #integration #internal", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -26,27 +27,32 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
 
   describe("GET /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no filters exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -55,6 +61,7 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
     });
 
     it("should return an array of filters", async () => {
+
       // Arrange
       await filterService.create({
         data: {
@@ -100,12 +107,13 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -164,33 +172,38 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
   });
 
   describe("GET /:id", () => {
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/filters/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 404 for non-existent filter", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/filters/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return a filter", async () => {
+
       // Arrange
       const filter = await filterService.create({
         data: {
@@ -214,12 +227,13 @@ describe("/api/v1/internal/filters #api #integration #internal", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/internal/filters/${filter.id}`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert

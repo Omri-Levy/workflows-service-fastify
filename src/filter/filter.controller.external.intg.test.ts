@@ -18,6 +18,7 @@ import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-
 import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
 import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
 import { TWebhookConfig } from "@/events/types";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/external/filters #api #integration #external", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -41,27 +42,32 @@ describe("/api/v1/external/filters #api #integration #external", () => {
 
   describe("GET /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no filters exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -70,6 +76,7 @@ describe("/api/v1/external/filters #api #integration #external", () => {
     });
 
     it("should return an array of filters", async () => {
+
       // Arrange
       await filterService.create({
         data: {
@@ -115,12 +122,14 @@ describe("/api/v1/external/filters #api #integration #external", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/filters"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
       const json = await res.json();
 
       // Assert
@@ -173,33 +182,40 @@ describe("/api/v1/external/filters #api #integration #external", () => {
   });
 
   describe("GET /:id", () => {
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/filters/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 404 for non-existent filter", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/external/filters/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return a filter", async () => {
+
       // Arrange
       const filter = await filterService.create({
         data: {
@@ -223,12 +239,13 @@ describe("/api/v1/external/filters #api #integration #external", () => {
           }
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/external/filters/${filter.id}`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
 
       // Assert
@@ -262,39 +279,44 @@ describe("/api/v1/external/filters #api #integration #external", () => {
 
   describe("POST /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 400 for missing required fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {}
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("should return 400 for invalid fields", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {
@@ -302,17 +324,20 @@ describe("/api/v1/external/filters #api #integration #external", () => {
           entity: {},
           query: []
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(400);
     });
 
     it("creates a filter", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {
@@ -335,7 +360,10 @@ describe("/api/v1/external/filters #api #integration #external", () => {
             }
           }
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
       const json = await res.json();
       const filter = await filterService.getById(json.id);
 
@@ -392,31 +420,8 @@ describe("/api/v1/external/filters #api #integration #external", () => {
     });
 
     it.skip("does not throw when using the created filter", async () => {
-      // Arrange
 
-      // Act
-      const filter = await filterService.create({
-        data: {
-          name: "test5",
-          entity: "businesses",
-          query: {
-            select: {
-              business: {
-                select: {
-                  companyName: true
-                }
-              }
-            },
-            where: {
-              business: {
-                is: {
-                  registrationNumber: "registrationNumber"
-                }
-              }
-            }
-          }
-        }
-      });
+      // Arrange
       const endUserRepository = new EndUserRepository(db);
       const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
       const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(db);
@@ -460,6 +465,30 @@ describe("/api/v1/external/filters #api #integration #external", () => {
         workflowCompletedWebhookCaller
       );
 
+      // Act
+      const filter = await filterService.create({
+        data: {
+          name: "test5",
+          entity: "businesses",
+          query: {
+            select: {
+              business: {
+                select: {
+                  companyName: true
+                }
+              }
+            },
+            where: {
+              business: {
+                is: {
+                  registrationNumber: "registrationNumber"
+                }
+              }
+            }
+          }
+        }
+      });
+
       // Assert
       expect(workflowService.listWorkflowRuntimeDataWithRelations({
         args: filter.query as any,
@@ -475,10 +504,9 @@ describe("/api/v1/external/filters #api #integration #external", () => {
     });
 
     it("should return 400 for duplicate `name`", async () => {
-      // Arrange
 
-      // Act
-      await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {
@@ -501,8 +529,8 @@ describe("/api/v1/external/filters #api #integration #external", () => {
             }
           }
         }
-      });
-      const duplicateNameRes = await app.inject({
+      } satisfies InjectOptions;
+      const duplicateNameInjectOptions = {
         method: "POST",
         url: "/api/v1/external/filters",
         body: {
@@ -525,7 +553,11 @@ describe("/api/v1/external/filters #api #integration #external", () => {
             }
           }
         }
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      await app.inject(injectOptions);
+      const duplicateNameRes = await app.inject(duplicateNameInjectOptions);
       const duplicateNameJson = await duplicateNameRes.json();
 
       // Assert

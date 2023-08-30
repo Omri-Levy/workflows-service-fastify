@@ -3,6 +3,7 @@ import { BusinessService } from "@/business/business.service";
 import { BusinessRepository } from "@/business/business.repository";
 import { db } from "@/db/client";
 import { build } from "@/server";
+import { InjectOptions } from "fastify";
 
 describe("/api/v1/internal/businesses #api #integration #internal", () => {
   let app: Awaited<ReturnType<typeof build>>;
@@ -26,27 +27,33 @@ describe("/api/v1/internal/businesses #api #integration #internal", () => {
 
   describe("GET /", () => {
 
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return an empty array if no businesses exist", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
       const json = await res.json();
 
       // Assert
@@ -55,6 +62,7 @@ describe("/api/v1/internal/businesses #api #integration #internal", () => {
     });
 
     it("should return an array of businesses", async () => {
+
       // Arrange
       await businessService.create({
         data: {
@@ -68,12 +76,14 @@ describe("/api/v1/internal/businesses #api #integration #internal", () => {
           registrationNumber: "1234567890"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/businesses"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
       const json = await res.json();
 
       // Assert
@@ -92,33 +102,40 @@ describe("/api/v1/internal/businesses #api #integration #internal", () => {
   });
 
   describe("GET /:id", () => {
-    it.skip("should return 401 for unauthorized requests", async () => {
-      // Arrange
+    it("should return 401 for unauthorized requests", async () => {
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/businesses/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(401);
     });
 
     it("should return 404 for non-existent business", async () => {
-      // Arrange
 
-      // Act
-      const res = await app.inject({
+      // Arrange
+      const injectOptions = {
         method: "GET",
         url: "/api/v1/internal/businesses/1"
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
 
       // Assert
       expect(res.statusCode).toBe(404);
     });
 
     it("should return a business", async () => {
+
       // Arrange
       const business = await businessService.create({
         data: {
@@ -126,12 +143,14 @@ describe("/api/v1/internal/businesses #api #integration #internal", () => {
           registrationNumber: "0123456789"
         }
       });
-
-      // Act
-      const res = await app.inject({
+      const injectOptions = {
         method: "GET",
         url: `/api/v1/internal/businesses/${business.id}`
-      });
+      } satisfies InjectOptions;
+
+      // Act
+      const res = await app.inject(injectOptions);
+
       const json = await res.json();
 
       // Assert

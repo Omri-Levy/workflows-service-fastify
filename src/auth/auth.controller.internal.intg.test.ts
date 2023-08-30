@@ -216,6 +216,18 @@ describe("/api/v1/internal/auth #api #integration #internal", () => {
       it("should clear the session", async () => {
 
         // Arrange
+        const loginInjectOptions = {
+          method: "POST",
+          url: "/api/v1/internal/auth/login",
+          body: {
+            email: "test@test.com",
+            password: "password"
+          }
+        } satisfies InjectOptions;
+        const injectOptions = {
+          method: "POST",
+          url: "/api/v1/internal/auth/logout"
+        } satisfies InjectOptions;
         await userService.create({
           data: {
             email: "test@test.com",
@@ -225,18 +237,7 @@ describe("/api/v1/internal/auth #api #integration #internal", () => {
             roles: ["user"]
           }
         });
-        await app.inject({
-          method: "POST",
-          url: "/api/v1/internal/auth/login",
-          body: {
-            email: "test@test.com",
-            password: "password"
-          }
-        });
-        const injectOptions = {
-          method: "POST",
-          url: "/api/v1/internal/auth/logout"
-        } satisfies InjectOptions;
+        await app.inject(loginInjectOptions);
 
         // Act
         const res = await app.inject(injectOptions);

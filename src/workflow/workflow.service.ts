@@ -472,7 +472,7 @@ export class WorkflowService {
       runtimeData.workflowDefinitionId
     );
 
-    const correlationId: string = await this.getCorrelationIdFromWorkflow(runtimeData);
+    const correlationId = await this.getCorrelationIdFromWorkflow(runtimeData);
 
     let contextHasChanged, mergedContext;
     if (data.context) {

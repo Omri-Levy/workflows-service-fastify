@@ -17,11 +17,11 @@ export const cleanupDatabase = async (db: Db) => {
   await db.$transaction([
     deleteWorkflowRuntimeData,
     deleteWorkflowDefinition,
-    deleteEndUsersOnBusinesses,
-    deleteEntities,
     deleteUser,
     deleteEndUser,
     deleteBusiness,
+    deleteEndUsersOnBusinesses,
+    deleteEntities,
     deleteFile,
     deletePolicy,
     deleteFilter,
