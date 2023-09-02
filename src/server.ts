@@ -31,9 +31,9 @@ import { ErrorHandlerPlugin } from "@/common/errors/error-handler-plugin";
 import fastifyPassport from "@fastify/passport";
 import {
   PassportSessionSerializerPlugin
-} from "@/auth/passport-session-serializer-plugin";
-import { PassportLocalStrategy } from "@/auth/passport-local-strategy";
-import { authPreHandler } from "@/auth/auth.pre-handler";
+} from "@/auth/plugins/passport-session-serializer-plugin";
+import { PassportLocalStrategy } from "@/auth/plugins/passport-local-strategy";
+import { authPreHandler } from "@/auth/plugins/auth.pre-handler";
 
 // This line is used to improve Sentry's stack traces
 // https://docs.sentry.io/platforms/node/typescript/#changing-events-frames
@@ -176,3 +176,5 @@ export const build = async () => {
 
   return app;
 };
+
+export type TApp = Awaited<ReturnType<typeof build>>;

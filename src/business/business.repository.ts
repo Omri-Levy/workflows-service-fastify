@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import { BusinessModel } from "./business.model";
 import { Db } from "@/db/client";
 
 export class BusinessRepository {
@@ -50,7 +49,7 @@ export class BusinessRepository {
   async updateById<T extends Omit<Prisma.BusinessUpdateArgs, 'where'>>(
     id: string,
     args: Prisma.SelectSubset<T, Omit<Prisma.BusinessUpdateArgs, 'where'>>,
-  ): Promise<BusinessModel> {
+  )  {
     return await this.db.business.update({
       where: { id },
       ...args,

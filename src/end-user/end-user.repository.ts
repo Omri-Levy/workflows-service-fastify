@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import { EndUserModel } from "./end-user.model";
 import { db } from "@/db/client";
 
 type Db = typeof db;
@@ -46,7 +45,7 @@ export class EndUserRepository {
   async updateById<T extends Omit<Prisma.EndUserUpdateArgs, 'where'>>(
     id: string,
     args: Prisma.SelectSubset<T, Omit<Prisma.EndUserUpdateArgs, 'where'>>,
-  ): Promise<EndUserModel> {
+  ) {
     return await this.db.endUser.update({
       where: { id },
       ...args,

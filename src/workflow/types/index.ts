@@ -3,6 +3,7 @@ import { Business, EndUser, WorkflowDefinition, WorkflowRuntimeData, WorkflowRun
 import { User } from "@sentry/node";
 import { TProjectIds } from "@/types";
 import { TApprovalState } from "@/common/enums";
+import { WorkflowService } from "@/workflow/workflow.service";
 
 export type TEntityType = "endUser" | "business";
 
@@ -92,4 +93,10 @@ export type ExtractWorkflowEventData<TEvent extends TEventName> = Omit<
     }
   >,
   "eventName"
+>;
+
+export type ListWorkflowRuntimeDataWithRelationsReturnType = Awaited<
+  ReturnType<
+    InstanceType<typeof WorkflowService
+    >['listWorkflowRuntimeDataWithRelations']>
 >;

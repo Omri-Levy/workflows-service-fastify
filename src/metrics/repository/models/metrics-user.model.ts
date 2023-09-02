@@ -1,15 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Type } from '@sinclair/typebox';
 
-export class MetricsUserModel {
-  @ApiProperty()
-  id!: string;
-
-  @ApiProperty()
-  firstName!: string;
-
-  @ApiProperty()
-  lastName!: string;
-
-  @ApiProperty()
-  lastActiveAt!: string;
-}
+export const MetricsUserModelSchema = Type.Object({
+  id: Type.String(),
+  firstName: Type.String(),
+  lastName: Type.String(),
+  lastActiveAt: Type.String()
+});

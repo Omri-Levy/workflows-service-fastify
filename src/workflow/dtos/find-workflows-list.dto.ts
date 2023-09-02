@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { WorkflowRuntimeDataStatus } from '@prisma/client';
 import { Type } from '@sinclair/typebox';
 import { z } from 'zod';
-import { WorkflowRuntimeDataStatusSchema } from "@/common/schemas";
+
+import { WorkflowRuntimeDataStatusSchema } from "@/workflow/workflow-runtime-data-status.schema";
 
 class PageDto {
   @ApiProperty()

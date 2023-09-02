@@ -1,5 +1,5 @@
-import { WorkflowRuntimeDataSchema } from "@/common/schemas";
 import { Static, Type } from "@sinclair/typebox";
+import { WorkflowRuntimeDataSchema } from "@/workflow/workflow-runtime-data.schema";
 
 export const WorkflowRuntimeDataUpdateSchema = Type.Partial(
   Type.Pick(WorkflowRuntimeDataSchema, [

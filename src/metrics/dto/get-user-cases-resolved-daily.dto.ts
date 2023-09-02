@@ -1,7 +1,9 @@
-import { DateQueryParamsDto } from '@/metrics/common/dto/date-query-params.dto';
-import { ApiProperty } from '@nestjs/swagger';
+import { DateQueryParamsDto } from "@/metrics/common/dto/date-query-params.dto";
+import { Type } from "@sinclair/typebox";
 
-export class GetUserCasesResolvedDailyDto extends DateQueryParamsDto {
-  @ApiProperty()
-  userId!: string;
-}
+export const GetUserCasesResolvedDailyDto = Type.Composite([
+  DateQueryParamsDto,
+  Type.Object({
+    userId: Type.String()
+  })
+]);

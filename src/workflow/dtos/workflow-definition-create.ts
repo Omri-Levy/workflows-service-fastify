@@ -1,5 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import { WorkflowDefinitionSchema } from "@/common/schemas";
+
+import { WorkflowDefinitionSchema } from "@/workflow/workflow-definition.schema";
 
 export const WorkflowDefinitionCreateSchema = Type.Pick(WorkflowDefinitionSchema, [
   "name",
