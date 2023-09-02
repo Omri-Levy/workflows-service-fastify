@@ -8,10 +8,10 @@ export const logoutRouteInternal: FastifyPluginAsyncTypebox = async (app) => {
     schema: LogoutRouteInternalSchema,
     handler: async (req, reply) => {
 
-      await req.logOut();
+      void req.logOut();
 
-      await reply.clearCookie("session", { path: "/", httpOnly: true });
-      await reply.clearCookie("session.sig", { path: "/", httpOnly: true });
+      void reply.clearCookie("session", { path: "/", httpOnly: true });
+      void reply.clearCookie("session.sig", { path: "/", httpOnly: true });
 
       return reply.send({ user: null });
     }

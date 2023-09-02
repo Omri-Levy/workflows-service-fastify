@@ -18,6 +18,7 @@ import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-
 import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
 import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
 import { WorkflowService } from "@/workflow/workflow.service";
+import EventEmitter from "events";
 
 export const deleteWorkflowDefinitionRouteInternal: FastifyPluginAsyncTypebox = async (app) => {
 
@@ -85,6 +86,7 @@ export const deleteWorkflowDefinitionRouteInternal: FastifyPluginAsyncTypebox = 
             submitStates: true
           }
         });
+
         return reply.send(workflowDefinition);
       } catch (err) {
         throw err;

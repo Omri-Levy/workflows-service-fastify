@@ -67,7 +67,7 @@ describe("POST /api/v1/internal/auth/login #api #integration #internal", () => {
   });
 
   describe("when the user does not exist", () => {
-    it("should return 400", async () => {
+    it("should return 401", async () => {
 
       // Arrange
       const injectOptions = {

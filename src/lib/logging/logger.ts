@@ -34,7 +34,7 @@ function createLoggerInstance() {
 	return pino({
 		messageKey: 'message',
 		errorKey: 'error',
-		level: env.NODE_ENV === 'test' ? 'error' : config.log.level,
+		level: env.NODE_ENV === 'test' ? 'trace' : config.log.level,
 		/* c8 ignore start */
 		...(config.log.enablePretty
 			? {

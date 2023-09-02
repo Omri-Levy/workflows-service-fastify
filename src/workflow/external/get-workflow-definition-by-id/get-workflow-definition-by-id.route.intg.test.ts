@@ -113,7 +113,7 @@ describe("GET /api/v1/external/workflows/workflow-definition/:id #api #integrati
   });
 
   describe("when the workflow definition exists", () => {
-    it("should return the workflow definition belonging to the id", async () => {
+    it("should return the workflow definition belonging to the given id", async () => {
 
       // Arrange
       const workflow = await workflowService.createWorkflowDefinition({

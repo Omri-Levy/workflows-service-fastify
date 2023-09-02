@@ -1,4 +1,4 @@
-import packageJson from "../../package.json";
+import packageJson from "../../../../package.json";
 import { build, TApp } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
 import { WorkflowService } from "@/workflow/workflow.service";

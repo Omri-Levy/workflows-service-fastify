@@ -78,6 +78,24 @@ export class UserRepository {
     });
   }
 
+  async deleteManyByIds<T extends Omit<Prisma.UserDeleteManyArgs, 'where'>>(
+    ids?: Array<string>,
+    args?: Prisma.SelectSubset<T, Omit<Prisma.UserDeleteManyArgs, 'where'>>,
+  ) {
+    return this.db.user.deleteMany({
+      ...(
+        Array.isArray(ids) && !!ids?.length && {
+          where: {
+            id: {
+              in: ids
+            }
+          }
+        }
+      ),
+      ...args,
+    });
+  }
+
   async queryRaw<TValue>(query: string, values: any[] = []): Promise<TValue> {
     return (await this.db.$queryRawUnsafe.apply(this.db, [query, ...values])) as TValue;
   }

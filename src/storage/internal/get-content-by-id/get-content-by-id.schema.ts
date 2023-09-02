@@ -7,10 +7,9 @@ export const GetContentByIdRouteInternalSchema = {
   }),
   response: {
     200: {
-      type: "string",
-      content: "application/octet-stream",
-      format: "binary",
-      description: "File's content"
+      description: "File's content",
+      type: 'string',
+      contentEncoding: 'binary'
     },
     400: BadRequestSchema,
     401: UnauthorizedSchema,

@@ -3,14 +3,14 @@ import { listEndUsersRouteExternal } from "@/end-user/external/list-end-users/li
 import { createEndUserRouteExternal } from "@/end-user/external/create-end-user/create-end-user.route";
 import { getEndUserByIdRouteExternal } from "@/end-user/external/get-end-user-by-id/get-end-user-by-id.route";
 import {
-  listWorkflowsByBusinessIdRouteExternal
-} from "@/business/external/list-workflows-by-business-id/list-workflows-by-business-id.route";
+  listWorkflowsByEndUserIdRouteExternal
+} from "@/end-user/external/list-workflows-by-end-user-id/list-workflows-by-end-user-id.route";
 
 export const endUserControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
   await fastify.register(createEndUserRouteExternal);
   await fastify.register(listEndUsersRouteExternal);
   await fastify.register(getEndUserByIdRouteExternal);
-  await fastify.register(listWorkflowsByBusinessIdRouteExternal);
+  await fastify.register(listWorkflowsByEndUserIdRouteExternal);
 
 };

@@ -16,6 +16,7 @@ import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-
 import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
 import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
 import { WorkflowService } from "@/workflow/workflow.service";
+import EventEmitter from "events";
 
 export const eventRouteInternal: FastifyPluginAsyncTypebox = async (app) => {
 
@@ -71,12 +72,14 @@ export const eventRouteInternal: FastifyPluginAsyncTypebox = async (app) => {
     handler: async (req, reply) => {
       try {
         const { name, document, resubmissionReason } = req.body;
+
         await workflowService.event({
           id: req.params.id,
           name,
           document,
           resubmissionReason
         });
+
         return reply.send();
       } catch (err) {
         throw err;

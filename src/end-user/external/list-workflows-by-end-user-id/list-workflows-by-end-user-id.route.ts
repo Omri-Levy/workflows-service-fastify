@@ -21,7 +21,7 @@ import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webh
 import { WorkflowService } from "@/workflow/workflow.service";
 import EventEmitter from "events";
 
-export const listEndUserWorkflowsRouteInternal: FastifyPluginAsyncTypebox = async (app) => {
+export const listWorkflowsByEndUserIdRouteExternal: FastifyPluginAsyncTypebox = async (app) => {
 
   const endUserRepository = new EndUserRepository(
     db

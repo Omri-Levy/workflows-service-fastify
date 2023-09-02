@@ -30,7 +30,6 @@ describe("GET /api/v1/internal/workflows/:id #api #integration #internal", () =>
   const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
   const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(db);
   const endUserRepository = new EndUserRepository(db);
-  const endUserService = new EndUserService(endUserRepository);
   const fileRepository = new FileRepository(db);
   const fileService = new FileService();
   const storageService = new StorageService(fileRepository);
@@ -168,7 +167,7 @@ describe("GET /api/v1/internal/workflows/:id #api #integration #internal", () =>
   });
 
   describe("when the workflow exists", () => {
-    it("should return the workflow belonging to the id", async () => {
+    it("should return the workflow belonging to the given id", async () => {
 
       // Arrange
       const filter = await filterService.create({

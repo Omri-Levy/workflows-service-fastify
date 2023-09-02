@@ -1,4 +1,4 @@
-import { build } from "@/server";
+import { build, TApp } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
 import { db } from "@/db/client";
 import { InjectOptions } from "fastify";
@@ -16,6 +16,7 @@ describe("GET /api/v1/health/ready #api #integration", () => {
     await tearDownDatabase(db);
   });
 
+  describe("when the server is ready", () => {
     it("should return 204", async () => {
 
       // Arrange
@@ -29,6 +30,8 @@ describe("GET /api/v1/health/ready #api #integration", () => {
 
       // Assert
       expect(res.statusCode).toBe(204);
+
     });
+  });
 
 });

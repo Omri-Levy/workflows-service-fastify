@@ -2,7 +2,7 @@ import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helpe
 import { BusinessService } from "@/business/business.service";
 import { BusinessRepository } from "@/business/business.repository";
 import { db } from "@/db/client";
-import { build } from "@/server";
+import { build, TApp } from "@/server";
 import { InjectOptions } from "fastify";
 import { AuthSetupFn, setupAuth } from "@/test/setup-auth";
 
@@ -28,7 +28,8 @@ describe("/api/v1/internal/businesses/:id #api #integration #internal", () => {
     await tearDownDatabase(db);
   });
 
-    it("should return 401 for unauthorized requests", async () => {
+  describe("when unauthenticated", () => {
+    it("should return 401", async () => {
 
       // Arrange
       const injectOptions = {
@@ -39,12 +40,13 @@ describe("/api/v1/internal/businesses/:id #api #integration #internal", () => {
       // Act
       const res = await app.inject(injectOptions);
 
-
       // Assert
-      expect(res.statusCode).toBe(401);
+      expect(res.statusCode).toEqual(401);
     });
+  });
 
-    it("should return 404 for non-existent business", async () => {
+  describe("when the business does not exist", () => {
+    it("should return 404", async () => {
 
       // Arrange
       const injectOptions = {
@@ -59,12 +61,13 @@ describe("/api/v1/internal/businesses/:id #api #integration #internal", () => {
         ...authHeaders
       });
 
-
       // Assert
-      expect(res.statusCode).toBe(404);
+      expect(res.statusCode).toEqual(404);
     });
+  });
 
-    it("should return a business", async () => {
+  describe("when the business exists", () => {
+    it("should return the business belonging to the given id", async () => {
 
       // Arrange
       const business = await businessService.create({
@@ -73,6 +76,7 @@ describe("/api/v1/internal/businesses/:id #api #integration #internal", () => {
           registrationNumber: "0123456789"
         }
       });
+
       const injectOptions = {
         method: "GET",
         url: `/api/v1/internal/businesses/${business.id}`
@@ -95,5 +99,6 @@ describe("/api/v1/internal/businesses/:id #api #integration #internal", () => {
         registrationNumber: "0123456789"
       });
     });
+  });
 
 });

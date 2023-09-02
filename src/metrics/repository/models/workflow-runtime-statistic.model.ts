@@ -1,8 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
-export class WorkflowRuntimeStatusStatistic {}
-
 export class WorkflowRuntimeStatisticModel {
   @ApiProperty({ description: 'Workflow Runtime Definition Id' })
   id!: string;

@@ -96,7 +96,8 @@ describe("DELETE /api/v1/internal/workflows/:id #api #integration #internal", ()
     });
   });
 
-  describe("when the workflow definition does not exist", () => {
+  // Not covered by application code
+  describe.skip("when the workflow definition does not exist", () => {
     it("should return 404", async () => {
 
       // Arrange

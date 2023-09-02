@@ -74,6 +74,7 @@ export const updateWorkflowRuntimeDataRouteInternal: FastifyPluginAsyncTypebox =
     handler: async (req, reply) => {
       try {
         const workflowRuntimeData = await workflowService.updateWorkflowRuntimeData(req.params.id, req.body);
+
         return reply.send(workflowRuntimeData);
       } catch (err) {
         throw err;

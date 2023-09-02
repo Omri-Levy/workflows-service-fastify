@@ -1,4 +1,3 @@
-import packageJson from "../../package.json";
 import { build, TApp } from "@/server";
 import { cleanupDatabase, tearDownDatabase } from "@/test/helpers/database-helper";
 import { WorkflowService } from "@/workflow/workflow.service";
@@ -19,8 +18,6 @@ import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-chang
 import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
 import { TWebhookConfig } from "@/events/types";
 import { InjectOptions } from "fastify";
-import { randomUUID } from "node:crypto";
-import nock from "nock";
 
 describe("GET /api/v1/external/workflows/:id/context #api #integration #external", () => {
   let app: TApp;
@@ -30,7 +27,6 @@ describe("GET /api/v1/external/workflows/:id/context #api #integration #external
   const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
   const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(db);
   const endUserRepository = new EndUserRepository(db);
-  const endUserService = new EndUserService(endUserRepository);
   const fileRepository = new FileRepository(db);
   const fileService = new FileService();
   const storageService = new StorageService(fileRepository);
@@ -115,7 +111,7 @@ describe("GET /api/v1/external/workflows/:id/context #api #integration #external
   });
 
   describe("when the workflow exists", () => {
-    it("should return the context of the workflow belonging to the id", async () => {
+    it("should return the context of the workflow belonging to the given id", async () => {
 
       // Arrange
       const workflowDefinition = await workflowService.createWorkflowDefinition({
