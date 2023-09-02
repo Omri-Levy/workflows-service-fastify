@@ -140,13 +140,7 @@ describe("POST /api/v1/internal/users #api #integration #internal", () => {
         lastName: "lastName",
         roles: ["admin"]
       });
-      expect(user).toMatchObject({
-        id: expect.any(String),
-        email: "test3@test3.com",
-        firstName: "test",
-        lastName: "lastName",
-        roles: ["admin"]
-      });
+      expect(json).not.toHaveProperty("password");
 
     });
   });

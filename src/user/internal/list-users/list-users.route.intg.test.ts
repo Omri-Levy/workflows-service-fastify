@@ -139,6 +139,13 @@ describe("GET /api/v1/internal/users #api #integration #internal", () => {
           phone: null
         })
       ]);
+      expect(json).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            password: expect.any(String)
+          })
+        ])
+      )
 
     });
   });
