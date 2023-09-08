@@ -17,7 +17,7 @@ import { eventRouteExternal } from "@/workflow/external/event/event.route";
 import { sendEventRouteExternal } from "@/workflow/external/send-event/send-event.route";
 import { getContextByIdRouteExternal } from "@/workflow/external/get-context-by-id/get-context-by-id.route";
 
-export const workflowsControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
+export const workflowControllerExternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
   await fastify.register(listWorkflowsRouteExternal);
   await fastify.register(getWorkflowDefinitionByIdRouteExternal);

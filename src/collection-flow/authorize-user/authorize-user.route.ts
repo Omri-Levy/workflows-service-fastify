@@ -1,0 +1,101 @@
+import { getProjectIds } from "@/common/utils/get-project-ids/get-project-ids";
+import { CollectionFlowService } from "@/collection-flow/collection-flow.service";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { EndUserService } from "@/end-user/end-user.service";
+import { WorkflowRuntimeDataRepository } from "@/workflow/workflow-runtime-data.repository";
+import { WorkflowDefinitionRepository } from "@/workflow/workflow-definition.repository";
+import { WorkflowService } from "@/workflow/workflow.service";
+import { BusinessService } from "@/business/business.service";
+import { EndUserRepository } from "@/end-user/end-user.repository";
+import { db } from "@/db/client";
+import { BusinessRepository } from "@/business/business.repository";
+import { FileRepository } from "@/storage/storage.repository";
+import { FileService } from "@/providers/file/file.service";
+import { StorageService } from "@/storage/storage.service";
+import { WorkflowEventEmitterService } from "@/workflow/workflow-event-emitter.service";
+import { HttpService } from "@/http/http.service";
+import { env } from "@/env";
+import { TWebhookConfig } from "@/events/types";
+import { DocumentChangedWebhookCaller } from "@/events/document-changed-webhook-caller";
+import { WorkflowStateChangedWebhookCaller } from "@/events/workflow-state-changed-webhook-caller";
+import { WorkflowCompletedWebhookCaller } from "@/events/workflow-completed-webhook-caller";
+import EventEmitter from "events";
+import { AuthorizeUserRouteSchema } from "@/collection-flow/authorize-user/authorize-user.schema";
+
+export const authorizeUserRoute: FastifyPluginAsyncTypebox = async (app) => {
+
+  const eventEmitter = new EventEmitter();
+  const config = {
+    NODE_ENV: env.NODE_ENV,
+    WEBHOOK_URL: env.WEBHOOK_URL,
+    WEBHOOK_SECRET: env.WEBHOOK_SECRET
+  }  satisfies TWebhookConfig
+
+  const businessRepository = new BusinessRepository(
+    db
+  );
+  const workflowDefinitionRepository = new WorkflowDefinitionRepository(db);
+  const workflowRuntimeDataRepository = new WorkflowRuntimeDataRepository(db);
+  const endUserRepository = new EndUserRepository(db);
+  const fileRepository = new FileRepository(db);
+
+  const workflowEventEmitterService = new WorkflowEventEmitterService(eventEmitter);
+  const httpService = new HttpService();
+
+  const documentChangedWebhookCaller = new DocumentChangedWebhookCaller(
+    httpService,
+    workflowEventEmitterService,
+    config,
+  );
+  const workflowStateChangedWebhookCaller = new WorkflowStateChangedWebhookCaller(
+    httpService,
+    workflowEventEmitterService,
+    config,
+  );
+  const workflowCompletedWebhookCaller = new WorkflowCompletedWebhookCaller(
+    httpService,
+    workflowEventEmitterService,
+    config,
+  );
+
+  const endUserService = new EndUserService(
+    endUserRepository,
+  );
+  const fileService = new FileService();
+  const storageService = new StorageService(fileRepository);
+  const workflowService = new WorkflowService(
+    workflowDefinitionRepository,
+    workflowRuntimeDataRepository,
+    endUserRepository,
+    businessRepository,
+    storageService,
+    fileService,
+    workflowEventEmitterService,
+    documentChangedWebhookCaller,
+    workflowStateChangedWebhookCaller,
+    workflowCompletedWebhookCaller
+  );
+  const businessService = new BusinessService(
+    businessRepository,
+  );
+  const collectionFlowService = new CollectionFlowService(
+    endUserService,
+    workflowRuntimeDataRepository,
+    workflowDefinitionRepository,
+    workflowService,
+    businessService
+  );
+
+  app.route({
+    method: "POST",
+    url: "/authorize",
+    schema: AuthorizeUserRouteSchema,
+    handler: async (req, reply) => {
+      const {email, flowType} = req.body;
+      const projectIds = getProjectIds(req); // Assuming getProjectIds is a function that extracts projectIds from the request
+      const endUser = await collectionFlowService.authorize({ email, flowType }, projectIds);
+
+      return reply.status(200).send(endUser);
+    }
+  });
+};

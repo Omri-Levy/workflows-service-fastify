@@ -18,7 +18,7 @@ import {
 } from "@/workflow/internal/delete-workflow-definition-by-id/delete-workflow-definition-by-id.route";
 import { assignWorkflowByIdRouteInternal } from "@/workflow/internal/assign-workflow-by-id/assign-workflow-by-id.route";
 
-export const workflowsControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
+export const workflowControllerInternal: FastifyPluginAsyncTypebox = async (fastify) => {
 
   await fastify.register(createWorkflowDefinitionRouteInternal);
   await fastify.register(listWorkflowRuntimeDataRouteInternal);

@@ -1,4 +1,5 @@
 import { User } from "@prisma/client";
+import { TProjectIds } from "@/types";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -8,7 +9,9 @@ declare global {
 
 declare module "fastify" {
 
-  interface PassportUser extends Pick<User, "id" | "email" | "firstName" | "lastName"> {}
+  interface PassportUser extends Pick<User, "id" | "email" | "firstName" | "lastName"> {
+    projectIds: TProjectIds;
+  }
 
   interface FastifyRequest {
 

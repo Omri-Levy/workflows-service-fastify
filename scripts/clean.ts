@@ -1,22 +1,25 @@
 /**
  * Clean all the tables and types created by Prisma in the database
  */
-import { PrismaClient } from "@prisma/client";
-import "dotenv/config";
+import * as dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 
-clean().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  dotenv.config();
+  clean().catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
+}
 
 async function clean() {
-  console.info("Dropping all tables in the database...");
+  console.info('Dropping all tables in the database...');
   const prisma = new PrismaClient();
   const tables = await getTables(prisma);
   const types = await getTypes(prisma);
   await dropTables(prisma, tables);
   await dropTypes(prisma, types.sort());
-  console.info("Cleaned database successfully");
+  console.info('Cleaned database successfully');
   await prisma.$disconnect();
 }
 
@@ -35,9 +38,7 @@ async function dropTypes(prisma: PrismaClient, types: string[]) {
 async function getTables(prisma: PrismaClient): Promise<string[]> {
   const results: Array<{
     tablename: string;
-  }> = await prisma.$queryRaw`SELECT tablename
-                              from pg_tables
-                              where schemaname = 'public';`;
+  }> = await prisma.$queryRaw`SELECT tablename from pg_tables where schemaname = 'public';`;
   return results.map(result => result.tablename);
 }
 
@@ -45,10 +46,10 @@ async function getTypes(prisma: PrismaClient): Promise<string[]> {
   const results: Array<{
     typname: string;
   }> = await prisma.$queryRaw`
-      SELECT t.typname
-      FROM pg_type t
-               JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-      WHERE n.nspname = 'public';
-  `;
+ SELECT t.typname
+ FROM pg_type t
+ JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+ WHERE n.nspname = 'public';
+ `;
   return results.map(result => result.typname);
 }
